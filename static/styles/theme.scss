@@ -1,0 +1,53 @@
+/******** flex混合宏 (mixins) ********/
+@mixin d-flex() {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+@mixin d-flex-sb() {
+	@include d-flex;
+	justify-content: space-between;
+}
+
+@mixin d-flex-sa() {
+	@include d-flex;
+	justify-content: space-around;
+}
+
+/******** 自定义主题 ********/
+/* 主题色 */
+$theme-color: #ffeb33;
+
+/* 页面bg */
+$page-bg-white: #ffffff;
+$page-bg-f8: #f8f8f8;
+
+/* 块bg */
+$block-bg-white: #ffffff;
+$block-bg-blue: #3682e2;
+$block-bg-f8: #f8f8f8;
+
+/* 边框 */
+$border-color-ee: #eeeeee;
+
+/* 字体颜色 */
+$font-color-darkGrey: #333333; //深灰
+$font-color-mediumGray: #666666; //中灰
+$font-color-lightGrey: #999999; //浅灰
+$font-color-black: #000000; //黑色
+$font-color-white: #ffffff; //白色
+$font-color-red: #ff0000; //红色
+$font-color-blue: #3682e2; //蓝色
+
+/* 字体大小 */
+/* uni-app  实际与设计稿大小1:1换算，设计稿尺寸750px，即750px = 750upx */
+$font-size-20: 20upx; //22px
+$font-size-22: 22upx; //22px
+$font-size-24: 24upx; //24px
+$font-size-26: 26upx; //26px
+$font-size-28: 28upx; //28px
+$font-size-30: 30upx; //30px
+$font-size-32: 32upx; //32px
+$font-size-34: 34upx; //34px
+$font-size-36: 36upx; //36px

@@ -1,0 +1,16 @@
+{
+  "name": "craft-mini",
+  "version": "1.0.0",
+  "description": "{**uniapp快速开发基础框架，兼容APP MINI H5**}",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://gitee.com/four_z/uni-basic-app.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

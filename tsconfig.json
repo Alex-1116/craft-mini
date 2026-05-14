@@ -1,0 +1,34 @@
+// tsconfig.json
+{
+	"compilerOptions": {
+		"baseUrl": ".", // 设置模块解析的基础目录为当前目录
+		"target": "esnext", // 指定ECMAScript目标版本为“下一代”，即支持最新的ECMAScript特性
+		"module": "esnext", // 指定模块系统为“下一代”标准，通常是ES模块，支持动态导入等新特性
+		"strict": true, // 启用所有严格类型检查选项
+		"jsx": "preserve", // 保留JSX语法
+		"moduleResolution": "node", // 使用Node.js的模块解析规则
+		"esModuleInterop": true, // 允许默认导入来自CommonJS模块的导出，增强CommonJS和ES模块之间的互操作性
+		"sourceMap": true, // 生成源映射文件
+		"skipLibCheck": true, // 跳过所有的 *.d.ts 文件的类型检查
+		"importHelpers": true, // 从tslib引入辅助函数。
+		"allowSyntheticDefaultImports": true, // 允许从没有默认导出的模块中使用默认导入语法，提高与某些库的兼容性
+		"useDefineForClassFields": true, // 使用defineProperty方法来初始化类字段
+		"resolveJsonModule": true, // 支持直接导入JSON文件
+		"noImplicitAny": false,
+		// 指定编译时应包含的库文件
+		"lib": [
+			"esnext",
+			"dom"
+		],
+		// 配置路径别名
+		"paths": {
+			"@/*": ["*"]
+		}
+	},
+	// 排除这些目录或文件不进行编译
+	"exclude": [
+		"node_modules",
+		"unpackage",
+		"src/**/*.nvue"
+	]
+}

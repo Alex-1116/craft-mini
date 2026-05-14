@@ -1,0 +1,147 @@
+{
+	"pages": [ //pages数组中第一项表示应用启动页，参考：https://uniapp.dcloud.io/collocation/pages
+		{
+			"path": "pages/tabbar/home/home",
+			"style": {
+				"navigationBarTitleText": "首页",
+				"navigationBarTextStyle": "white",
+				"enablePullDownRefresh": false,
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/tabbar/message/message",
+			"style": {
+				"navigationBarTitleText": "消息",
+				"navigationBarBackgroundColor": "#ffffff"
+			}
+		},
+		{
+			"path": "pages/tabbar/mine/mine",
+			"style": {
+				"navigationBarTitleText": "我的",
+				"navigationBarTextStyle": "white",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/auth/login",
+			"style": {
+				"navigationBarTitleText": "",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "platforms/mp-weixin/pages/auth/auth",
+			"style": {
+				"navigationBarTitleText": "登录",
+				"navigationStyle": "custom"
+			}
+		}
+	],
+	"subPackages": [ // 分包加载
+		{
+			"root": "pages/home",
+			"name": "home",
+			"independent": false, // 设置为独立分包 一般默认为false
+			"pages": [{
+				//path最前面不需要 斜杆 /
+				"path": "live-details/live-details",
+				"style": {
+					"navigationBarTitleText": "详情"
+				}
+			}]
+		},
+		{
+			"root": "pages/tools",
+			"name": "tools",
+			"independent": false,
+			"pages": [{
+				"path": "function/function",
+				"style": {
+					"navigationBarTitleText": "详情"
+				}
+			}, {
+				"path": "camera/camera",
+				"style": {
+					"navigationBarTitleText": "拍照"
+				}
+			}, {
+				"path": "base64/base64",
+				"style": {
+					"navigationBarTitleText": "base64图片"
+				}
+			}, {
+				"path": "list/list",
+				"style": {
+					"navigationBarTitleText": "列表"
+				}
+			},
+			{
+				"path" : "word/word",
+				"style" : 
+				{
+					"navigationBarTitleText" : "word"
+				}
+			},
+			{
+				"path" : "stamp/stamp",
+				"style" : 
+				{
+					"navigationBarTitleText" : "印章取图",
+					"navigationBarBackgroundColor": "#ffffff"
+				}
+			},
+			{
+				"path" : "clipper/clipper",
+				"style" : 
+				{
+					"navigationBarTitleText" : "调整大小",
+					"navigationBarTextStyle": "white",
+					"navigationBarBackgroundColor": "#151517",
+					"backgroundColorTop": "#151517",
+					"backgroundColorBottom": "#151517"
+				}
+			},
+			{
+				"path" : "certificate/certificate",
+				"style" : 
+				{
+					"navigationBarTitleText" : "证书"
+				}
+			}]
+		}
+	],
+	"globalStyle": {
+		"navigationBarTextStyle": "black",
+		"navigationBarTitleText": "uni-basic-app",
+		"navigationBarBackgroundColor": "#F8F8F8",
+		"backgroundColor": "#F8F8F8"
+	},
+	"tabBar": {
+		"color": "#666666",
+		"selectedColor": "#66d0ce",
+		"borderStyle": "white",
+		"backgroundColor": "#ffffff",
+		"height": "50px",
+		"fontSize": "10px",
+		"spacing": "5px",
+		"list": [{
+			"pagePath": "pages/tabbar/home/home",
+			"iconPath": "static/images/tabbar/icon_home.png",
+			"selectedIconPath": "static/images/tabbar/icon_home_select.png",
+			"text": "首页"
+		}, {
+			"pagePath": "pages/tabbar/message/message",
+			"iconPath": "static/images/tabbar/icon_message.png",
+			"selectedIconPath": "static/images/tabbar/icon_message_select.png",
+			"text": "消息"
+		}, {
+			"pagePath": "pages/tabbar/mine/mine",
+			"iconPath": "static/images/tabbar/icon_mine.png",
+			"selectedIconPath": "static/images/tabbar/icon_mine_select.png",
+			"text": "我的"
+		}]
+	},
+	"uniIdRouter": {}
+}

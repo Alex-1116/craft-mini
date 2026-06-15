@@ -1,20 +1,38 @@
 <template>
-	<view class="message_container">
-		<view class="search_main">
-			<view class="search_box Lefted">
-				<view class="iconfont icon-search"></view>
-				<input type="text" v-model="searchKey" placeholder="请输入...">
-				<button class="btn-search btn-active Centered" @click="onSearch">搜索</button>
+	<scroll-view class="message_container" scroll-y>
+		<view class="message_header">
+			<view class="header_caption">INBOX</view>
+			<view class="header_title">消息与动态</view>
+			<view class="search_box">
+				<view class="iconfont icon-search search_icon"></view>
+				<input type="text" v-model="searchKey" placeholder="搜索订单消息、品牌通知" placeholder-class="search_placeholder">
+				<button class="btn-search btn-active" @click="onSearch">搜索</button>
 			</view>
 		</view>
+
+		<view class="summary_card">
+			<view class="summary_item">
+				<text class="summary_value">{{ unreadCount }}</text>
+				<text class="summary_label">未读消息</text>
+			</view>
+			<view class="summary_item">
+				<text class="summary_value">{{ messageData.length }}</text>
+				<text class="summary_label">全部会话</text>
+			</view>
+			<view class="summary_item">
+				<text class="summary_value">C 端</text>
+				<text class="summary_label">当前范围</text>
+			</view>
+		</view>
+
 		<view class="message_main">
-			<view v-for="(msg, index) in messageData" :key="index">
+			<view class="section_title">最近消息</view>
+			<view v-for="(msg, index) in messageData" :key="index" class="message_block">
 				<hey-side-slip style="width: 100%; height: 100%;" :ref="(el: any) => setSlipRef(el, index)" @remove="onRemove(msg)" @closeOther="onCloseOther(index)">
-					<view class="message_item Lefted">
+					<view class="message_item">
 						<view class="head_box">
-							<img class="header" :src="msg.header" alt="" />
-							<view class="reddot Centered" v-if="msg.unRead > 0 && msg.unRead <= 99">{{ msg.unRead }}
-							</view>
+							<image class="header" :src="msg.header" mode="aspectFill"></image>
+							<view class="reddot Centered" v-if="msg.unRead > 0 && msg.unRead <= 99">{{ msg.unRead }}</view>
 							<view class="reddot Centered iconfont icon-more-filled" v-if="msg.unRead > 99"></view>
 						</view>
 						<view class="info_box">
@@ -28,11 +46,11 @@
 				</hey-side-slip>
 			</view>
 		</view>
-	</view>
+	</scroll-view>
 </template>
 
 <script lang="ts" setup>
-	import { ref, reactive, watch } from 'vue';
+	import { computed, ref, reactive, watch } from 'vue';
 	import { friendlyTimeFormat } from '@/shared/utils/dateUtil';
 
 	const searchKey = ref('');
@@ -74,6 +92,8 @@
 		}
 	]);
 
+	const unreadCount = computed(() => messageData.value.reduce((sum, item) => sum + item.unRead, 0));
+
 	// 使用Map来存储每个滑动条组件的引用
 	const slipRefs = reactive(new Map<number, any>());
 	// 每当`messageData`更新时，我们也需要更新`slipRefs`中的引用。
@@ -108,121 +128,173 @@
 
 <style lang="scss">
 	page {
-		background-color: #f4f6fa;
+		background-color: $page-bg-f8;
 	}
 
 	.message_container {
+		height: 100vh;
+	}
 
-		.search_main {
-			width: 100%;
-			height: auto;
+	.message_header {
+		padding: 34rpx 28rpx;
+		background: linear-gradient(180deg, #1b1712 0%, #2a2218 100%);
+		border-bottom-left-radius: 34rpx;
+		border-bottom-right-radius: 34rpx;
+	}
 
-			padding: 24rpx;
+	.header_caption {
+		font-size: 20rpx;
+		letter-spacing: 5rpx;
+		color: rgba(255, 255, 255, 0.58);
+	}
 
-			.search_box {
-				width: 100%;
-				height: 100rpx;
-				background: #ffffff;
-				border-radius: 50rpx;
-				padding: 0 24rpx;
-				box-sizing: border-box;
+	.header_title {
+		margin-top: 12rpx;
+		font-size: 42rpx;
+		font-weight: 700;
+		color: $font-color-white;
+	}
 
-				.icon-search {
-					font-size: 32rpx;
-					color: #999999;
-					margin-right: 20rpx;
-				}
+	.search_box {
+		display: flex;
+		align-items: center;
+		height: 92rpx;
+		margin-top: 26rpx;
+		padding: 0 20rpx 0 24rpx;
+		border-radius: 999rpx;
+		background: rgba(255, 255, 255, 0.08);
+		border: 1rpx solid rgba(255, 255, 255, 0.1);
+	}
 
-				input {
-					flex: 1;
-					width: 100%;
-					height: 100%;
-					font-size: 32rpx;
-					color: #333333;
-				}
+	.search_icon {
+		font-size: 30rpx;
+		color: rgba(255, 255, 255, 0.68);
+		margin-right: 18rpx;
+	}
 
-				.btn-search {
-					width: 140rpx;
-					height: 70rpx;
-					font-size: 28rpx;
-					color: #fff;
-					background: #47cfc8;
-					border-radius: 35rpx;
-				}
-			}
+	.search_box input {
+		flex: 1;
+		height: 100%;
+		font-size: 28rpx;
+		color: $font-color-white;
+	}
+
+	.search_placeholder {
+		color: rgba(255, 255, 255, 0.48);
+		font-size: 26rpx;
+	}
+
+	.btn-search {
+		width: 132rpx;
+		height: 64rpx;
+		line-height: 64rpx;
+		border-radius: 999rpx;
+		font-size: 24rpx;
+		color: $font-color-white;
+		background: linear-gradient(135deg, #9b875a 0%, #75643f 100%);
+	}
+
+	.summary_card {
+		display: flex;
+		margin: 24rpx 28rpx 0;
+		padding: 18rpx 0;
+		border-radius: 28rpx;
+		background: $block-bg-white;
+		box-shadow: 0 12rpx 30rpx $shadow-color-soft;
+	}
+
+	.summary_item {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 10rpx;
+		padding: 14rpx 0;
+	}
+
+	.summary_value {
+		font-size: 34rpx;
+		font-weight: 700;
+		color: $theme-color;
+	}
+
+	.summary_label {
+		font-size: 22rpx;
+		color: $font-color-lightGrey;
+	}
+
+	.message_main {
+		padding: 28rpx;
+	}
+
+	.section_title {
+		font-size: 32rpx;
+		font-weight: 700;
+		color: $font-color-darkGrey;
+		margin-bottom: 18rpx;
+	}
+
+	.message_block {
+		margin-bottom: 18rpx;
+		border-radius: 28rpx;
+		overflow: hidden;
+		box-shadow: 0 12rpx 30rpx $shadow-color-soft;
+	}
+
+	.message_item {
+		display: flex;
+		align-items: center;
+		padding: 24rpx;
+		background: $block-bg-white;
+		position: relative;
+	}
+
+	.head_box {
+		margin-right: 22rpx;
+		position: relative;
+	}
+
+	.header {
+		width: 100rpx;
+		height: 100rpx;
+		border-radius: 24rpx;
+		background: $block-bg-f8;
+	}
+
+	.reddot {
+		width: 38rpx;
+		height: 38rpx;
+		font-size: 20rpx;
+		font-weight: 500;
+		color: #ffffff;
+		background-color: #d95d4e;
+		border-radius: 50%;
+		position: absolute;
+		top: -10rpx;
+		right: -10rpx;
+	}
+
+	.info_box {
+		flex: 1;
+	}
+
+	.top {
+		.name {
+			font-size: 30rpx;
+			font-weight: 700;
+			color: $font-color-darkGrey;
 		}
 
-		.message_main {
-			width: 100%;
-			height: auto;
-
-			.message_item {
-				padding: 24rpx;
-				position: relative;
-
-				.head_box {
-					margin-right: 24rpx;
-					position: relative;
-
-					.header {
-						width: 100rpx;
-						height: 100rpx;
-						border-radius: 10rpx;
-					}
-
-					.reddot {
-						width: 36rpx;
-						height: 36rpx;
-						font-size: 20rpx;
-						font-weight: 500;
-						color: #ffffff;
-						background-color: #ff0000;
-						border-radius: 50%;
-						position: absolute;
-						top: -18rpx;
-						right: -18rpx;
-					}
-				}
-
-				.info_box {
-					flex: 1;
-
-					.top {
-						.name {
-							font-size: 32rpx;
-							font-weight: bold;
-							color: #333333;
-						}
-
-						.time {
-							font-size: 24rpx;
-							color: #999999;
-						}
-
-					}
-
-					.content {
-						width: 100%;
-						font-size: 28rpx;
-						color: #666666;
-						margin-top: 15rpx;
-					}
-				}
-			}
-
-
-			.message_item::after {
-				content: '';
-				width: calc(100% - 144rpx);
-				border-bottom: 1px solid #eeeeee;
-				position: absolute;
-				right: 0;
-				bottom: 0;
-			}
-
-			// .message_item:last-child::after {
-			// 	display: none;
-			// }
+		.time {
+			font-size: 22rpx;
+			color: $font-color-lightGrey;
 		}
+	}
+
+	.content {
+		width: 100%;
+		font-size: 24rpx;
+		color: $font-color-mediumGray;
+		margin-top: 12rpx;
 	}
 </style>

@@ -1,4 +1,4 @@
-/******** flex混合宏 (mixins) ********/
+/******** flex混合宏 ********/
 @mixin d-flex() {
 	display: flex;
 	justify-content: center;
@@ -15,39 +15,58 @@
 	justify-content: space-around;
 }
 
-/******** 自定义主题 ********/
-/* 主题色 */
-$theme-color: #ffeb33;
+/******** 品牌主题 ********/
+/* 主色延续网站端的黑金/米白视觉 */
+$theme-color: #8a7850;
+$theme-color-light: #efe7d6;
+$theme-color-dark: #5f5436;
 
-/* 页面bg */
+/* 页面背景 */
 $page-bg-white: #ffffff;
-$page-bg-f8: #f8f8f8;
+$page-bg-f8: #f7f4ee;
+$page-bg-dark: #14120f;
+$page-bg-soft: #f2ede3;
 
-/* 块bg */
+/* 卡片与块背景 */
 $block-bg-white: #ffffff;
-$block-bg-blue: #3682e2;
-$block-bg-f8: #f8f8f8;
+$block-bg-blue: #8a7850;
+$block-bg-f8: #f8f4ec;
+$block-bg-dark: #1f1b16;
+$block-bg-accent: #f1eadc;
 
 /* 边框 */
-$border-color-ee: #eeeeee;
+$border-color-ee: #e7dfd1;
+$border-color-dark: #2e291f;
 
 /* 字体颜色 */
-$font-color-darkGrey: #333333; //深灰
-$font-color-mediumGray: #666666; //中灰
-$font-color-lightGrey: #999999; //浅灰
-$font-color-black: #000000; //黑色
-$font-color-white: #ffffff; //白色
-$font-color-red: #ff0000; //红色
-$font-color-blue: #3682e2; //蓝色
+$font-color-darkGrey: #171411;
+$font-color-mediumGray: #5a5349;
+$font-color-lightGrey: #8f877c;
+$font-color-black: #000000;
+$font-color-white: #ffffff;
+$font-color-red: #c65b4b;
+$font-color-blue: #8a7850;
+$font-color-gold: #ad9660;
+
+/* 阴影 */
+$shadow-color-soft: rgba(25, 18, 8, 0.08);
+$shadow-color-strong: rgba(25, 18, 8, 0.16);
+
+/* 圆角 */
+$radius-sm: 12rpx;
+$radius-md: 20rpx;
+$radius-lg: 28rpx;
+$radius-xl: 36rpx;
 
 /* 字体大小 */
-/* uni-app  实际与设计稿大小1:1换算，设计稿尺寸750px，即750px = 750upx */
-$font-size-20: 20upx; //22px
-$font-size-22: 22upx; //22px
-$font-size-24: 24upx; //24px
-$font-size-26: 26upx; //26px
-$font-size-28: 28upx; //28px
-$font-size-30: 30upx; //30px
-$font-size-32: 32upx; //32px
-$font-size-34: 34upx; //34px
-$font-size-36: 36upx; //36px
+$font-size-20: 20upx;
+$font-size-22: 22upx;
+$font-size-24: 24upx;
+$font-size-26: 26upx;
+$font-size-28: 28upx;
+$font-size-30: 30upx;
+$font-size-32: 32upx;
+$font-size-34: 34upx;
+$font-size-36: 36upx;
+$font-size-40: 40upx;
+$font-size-44: 44upx;

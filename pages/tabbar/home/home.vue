@@ -1,367 +1,623 @@
 <template>
-	<view class="home_container" :style="{'padding-top':`${statusBarHeight + navigateHeight}px`}">
-		<view class="svg-container">
-			<view class="svg-element"></view>
-		</view>
-		<!-- 导航栏 -->
-		<hey-headers :isBack="false" :title="'今天也要开心噢~'" background="#F8D347" :titleStyle="{ 'color': '#ffffff' }"
-			boxShadow="initial"></hey-headers>
-		<!-- 轮播 -->
-		<hey-lunbo :lunboData="lunboData"></hey-lunbo>
-		<!-- 分类 -->
-		<hey-category :categoryData="categoryData" @onCategoryChange="onCategoryChange"></hey-category>
-		<!-- card -->
-		<view class="home_card Lefted">
-			<view class="card-item">
-				<view class="left-box Centered">左盒子</view>
-			</view>
-			<view class="card-item Lefted">
-				<view class="right-top-box Centered">右上盒子</view>
-				<view class="right-bottom-box Centered">右下盒子</view>
-			</view>
-		</view>
-		<!-- tabs -->
-		<view class="home_main">
-			<view class="main_tabs Betweened">
-				<view class="main_tabs-left Lefted">
-					<view class="Centered" :class="current === index ? 'tab_item active' : 'tab_item'"
-						v-for="(item,index) in tabList" :key="index" @click="onSwitchTabs(item, index)">
-						<view>{{ item.name }}</view>
-						<view class="line"></view>
+	<scroll-view class="home_container" scroll-y>
+		<view class="hero_shell">
+			<view class="hero_panel" :style="heroPanelStyle">
+				<view class="brand_row" :style="brandRowStyle">
+					<view class="brand_copy">
+						<view class="brand_subtitle">CRAFT MINI</view>
+						<view class="brand_title">雅致工艺</view>
 					</view>
+					<image class="brand_logo" src="/static/images/mini-logo.png" mode="aspectFill"></image>
 				</view>
-				<view class="main_tabs-right Lefted">
-					<view class="txt">更多</view>
-					<view class="iconfont icon-arrow-right"></view>
+				<view class="search_box" @click="onSearch">
+					<view class="iconfont icon-search search_icon"></view>
+					<text class="search_text">搜索雅器、茶器、香器与陈设</text>
+				</view>
+				<view class="hero_copy">
+					<text class="hero_copy-title">以器载道，重构东方审美的日常陈列</text>
+					<text class="hero_copy-desc">延续网站端的黑金米白主题，在小程序中优先呈现精选商品、分类与沉浸式卡片布局。</text>
 				</view>
 			</view>
-			<view class="main_list">
-				<view class="list_item" v-for="(item, index) in liveData" :key="index" @click="jumpLiveDetails">
-					<view class="title-box Betweened">
-						<view class="title Lefted">{{ item.title }}</view>
+		</view>
+
+		<view class="section category_section">
+			<view class="category_panel">
+				<view class="category_panel-header">
+					<view>
+						<view class="category_panel-caption">Category</view>
+						<view class="category_panel-title">器物分类</view>
 					</view>
-					<view class="content-box Lefted">
-						<image class="picture" :src="item.picture" mode=""></image>
-						<view class="info">
-							<view class="desc two-line-ellipsis">{{ item.desc }}</view>
-							<view class="badge Lefted">
-								<view class="badge-item Centered" v-for="(x, i) in item.badgeList" :key="i">{{ x.name }}
-								</view>
+					<view class="category_panel-tip">轻触进入对应列表</view>
+				</view>
+				<scroll-view class="category_scroll" scroll-x show-scrollbar="false">
+					<view class="category_list">
+						<view
+							v-for="item in categories"
+							:key="item.name"
+							class="category_chip"
+							:class="{ active: currentCategory === item.name }"
+							@click="switchCategory(item.name)"
+						>
+							<view class="category_icon-wrap">
+								<image class="category_icon" :src="item.icon" mode="aspectFit"></image>
 							</view>
+							<text class="category_name">{{ item.name }}</text>
 						</view>
 					</view>
-					<view class="author-box Betweened">
-						<view class="info Lefted">
-							<image class="header" :src="item.header" mode=""></image>
-							<text>{{ item.author }}</text>
+				</scroll-view>
+			</view>
+		</view>
+
+		<view class="section">
+			<view class="section_header">
+				<view>
+					<view class="section_caption">Featured</view>
+					<view class="section_title">好物精选</view>
+				</view>
+				<view class="section_line"></view>
+			</view>
+
+			<swiper class="feature_swiper" circular autoplay interval="4000" duration="500">
+				<swiper-item v-for="item in heroBanners" :key="item.id">
+					<view class="feature_card" @click="openDetail(item)">
+						<image class="feature_image" :src="item.image" mode="aspectFill"></image>
+						<view class="feature_mask"></view>
+						<view class="feature_content">
+							<text class="feature_tag">{{ item.tag }}</text>
+							<text class="feature_title">{{ item.title }}</text>
+							<text class="feature_desc two-line-ellipsis">{{ item.desc }}</text>
 						</view>
-						<view class="read Righted">
-							<view class="iconfont icon-yanjing"></view>
-							<view class="txt">{{ item.read }}</view>
+					</view>
+				</swiper-item>
+			</swiper>
+		</view>
+
+		<view class="section">
+			<view class="section_header">
+				<view>
+					<view class="section_caption">Collection</view>
+					<view class="section_title">{{ currentCategory }}</view>
+				</view>
+				<view class="section_more" @click="showMore">查看全部</view>
+			</view>
+
+			<view class="product_grid">
+				<view class="product_card" v-for="item in filteredProducts" :key="item.id" @click="openDetail(item)">
+					<image class="product_image" :src="item.image" mode="aspectFill"></image>
+					<view class="product_body">
+						<view class="product_name two-line-ellipsis">{{ item.name }}</view>
+						<view class="product_desc two-line-ellipsis">{{ item.desc }}</view>
+						<view class="product_footer">
+							<view>
+								<text class="product_price">¥{{ item.price }}</text>
+								<text class="product_origin" v-if="item.originPrice">¥{{ item.originPrice }}</text>
+							</view>
+							<text class="product_sales">已售 {{ item.sales }}</text>
 						</view>
 					</view>
 				</view>
 			</view>
 		</view>
-		<!-- ad -->
-		<!-- <ad class="ad" unit-id="adunit-9cc5cfc80c469f08"></ad> -->
-	</view>
+
+		<view class="section story_section">
+			<view class="section_header">
+				<view>
+					<view class="section_caption">Brand Story</view>
+					<view class="section_title">东方器物的日常表达</view>
+				</view>
+				<view class="section_line"></view>
+			</view>
+			<view class="story_card">
+				<view class="story_text">网站端的品牌调性以留白、黑金色和偏东方的排版为核心。小程序第一阶段先同步这些视觉 token，再逐步迁移商品详情、订单与登录流程。</view>
+				<view class="story_tags">
+					<text class="story_tag">黑金配色</text>
+					<text class="story_tag">卡片留白</text>
+					<text class="story_tag">移动端重构</text>
+				</view>
+			</view>
+		</view>
+	</scroll-view>
 </template>
 
 <script lang="ts" setup>
-	import { ref } from 'vue';
+	import { computed, ref } from 'vue';
 	import { onLoad } from '@dcloudio/uni-app';
+	import { craftProducts } from '@/shared/mock/craft';
+
+	interface CategoryItem {
+		name: string;
+		icon: string;
+	}
 
 	const statusBarHeight = ref<number>(0);
-	const navigateHeight = ref<number>(0);
-	onLoad(() => {
-		statusBarHeight.value = getApp().globalData?.statusBarHeight; //状态栏高度
-		navigateHeight.value = getApp().globalData?.navigateHeight; //导航栏高度
-	});
+	const navigateHeight = ref<number>(44);
+	const capsuleWidth = ref<number>(92);
+	const capsuleHeight = ref<number>(32);
+	const capsuleMarginTop = ref<number>(6);
+	const currentCategory = ref('全部');
 
-	// 轮播
-	const lunboData = [
-		{ img: 'https://t7.baidu.com/it/u=4240641596,3235181048&fm=193&f=GIF' },
-		{ img: 'https://t7.baidu.com/it/u=2291349828,4144427007&fm=193&f=GIF' },
-		{ img: 'https://t7.baidu.com/it/u=4036010509,3445021118&fm=193&f=GIF' }
+	const categories: CategoryItem[] = [
+		{ name: '全部', icon: '/static/images/category/icon-mairu.png' },
+		{ name: '茶器', icon: '/static/images/category/icon-jianzhi.png' },
+		{ name: '香器', icon: '/static/images/category/icon-shiwu.png' },
+		{ name: '花器', icon: '/static/images/category/icon-hezuo.png' },
+		{ name: '陈设', icon: '/static/images/category/icon-jiaoliu.png' }
 	];
 
-	// 分类
-	const categoryData = [{
-		imageUrl: '/static/images/category/icon-mairu.png',
-		text: '淘好货'
-	}, {
-		imageUrl: '/static/images/category/icon-jianzhi.png',
-		text: '兼职'
-	}, {
-		imageUrl: '/static/images/category/icon-shiwu.png',
-		text: '失物招领'
-	}, {
-		imageUrl: '/static/images/category/icon-kuaidi.png',
-		text: '代取快递'
-	}, {
-		imageUrl: '/static/images/category/icon-watermark.png',
-		text: '图片加水印'
-	}, {
-		imageUrl: '/static/images/category/icon-fabu.png',
-		text: '发布内容'
-	}, {
-		imageUrl: '/static/images/category/icon-hezuo.png',
-		text: '推广合作'
-	}, {
-		imageUrl: '/static/images/category/icon-jiaoliu.png',
-		text: '交流群'
-	}];
+	const heroBanners = [
+		{
+			id: 'hero-1',
+			title: '器物之美，藏于日用',
+			tag: '东方雅集',
+			desc: '以更克制的色彩与留白，让首页首屏先承接网站端的品牌气质。',
+			image: 'https://images.unsplash.com/photo-1517705008128-361805f42e86?auto=format&fit=crop&w=1200&q=80'
+		},
+		{
+			id: 'hero-2',
+			title: '茶席与陈设的层次感',
+			tag: '本周主推',
+			desc: '焦点横幅采用沉浸式大图与渐层遮罩，模拟网站端 Hero Carousel 的观感。',
+			image: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=1200&q=80'
+		},
+		{
+			id: 'hero-3',
+			title: '温润材质，留住手作感',
+			tag: '匠心推荐',
+			desc: '在小程序里保留黑金米白的视觉基调，同时降低复杂动效，提升触控体验。',
+			image: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=1200&q=80'
+		}
+	];
 
-	const onCategoryChange = (item : any) => {
-		uni.showToast({
-			icon: 'none',
-			title: item.text
-		})
-	}
+	const products = ref(craftProducts);
 
-	// tabs
-	const current = ref(0);
-	const tabList = [{
-		name: '最新'
-	}, {
-		name: '全部'
-	}, {
-		name: '排行'
-	}];
+	const filteredProducts = computed(() => {
+		if (currentCategory.value === '全部') {
+			return products.value;
+		}
+		return products.value.filter((item) => item.category === currentCategory.value);
+	});
 
-	const onSwitchTabs = (item, index) => {
-		current.value = index;
+	const heroPanelStyle = computed(() => ({
+		paddingTop: `${statusBarHeight.value + 16}px`
+	}));
+
+	const brandRowStyle = computed(() => ({
+		paddingRight: `${capsuleWidth.value + 16}px`,
+		minHeight: `${Math.max(capsuleHeight.value, 44)}px`,
+		marginTop: `${Math.max(capsuleMarginTop.value - 2, 0)}px`
+	}));
+
+	onLoad(() => {
+		statusBarHeight.value = getApp().globalData?.statusBarHeight || 0;
+		navigateHeight.value = getApp().globalData?.navigateHeight || 44;
+		capsuleWidth.value = getApp().globalData?.capsuleWidth || 92;
+		capsuleHeight.value = getApp().globalData?.capsuleHeight || 32;
+		capsuleMarginTop.value = getApp().globalData?.capsuleMarginTopByStatusBar || 6;
+	});
+
+	const switchCategory = (name: string) => {
+		currentCategory.value = name;
+		uni.navigateTo({
+			url: `/pages/home/goods-list/goods-list?category=${encodeURIComponent(name)}`
+		});
 	};
 
-	// list
-	const liveData = [{
-		title: '知其不可奈何而安之若命',
-		picture: 'https://tupian.qqw21.com/article/UploadPic/2020-3/202032716363464396.jpg',
-		desc: '你可以像盲人解释大海，他们不理解什么是蓝色，但是他们可以理解无尽。',
-		badgeList: [{
-			name: '励志'
-		}, {
-			name: '风景'
-		}, {
-			name: '美女'
-		}],
-		author: '小白',
-		header: 'https://salephine.asia/img/index/logo.gif',
-		read: 30
-	}]
-	
-	const jumpLiveDetails = () => {
+	const onSearch = () => {
 		uni.navigateTo({
-			url: '/pages/home/live-details/live-details'
-		})
-	}
+			url: '/pages/home/goods-list/goods-list'
+		});
+	};
+
+	const showMore = () => {
+		uni.navigateTo({
+			url: `/pages/home/goods-list/goods-list?category=${encodeURIComponent(currentCategory.value)}`
+		});
+	};
+
+	const openDetail = (item: { id: string; name: string }) => {
+		uni.navigateTo({
+			url: `/pages/home/goods-datails/goods-datails?id=${item.id}&title=${encodeURIComponent(item.name)}`
+		});
+	};
 </script>
 
 <style lang="scss">
 	page {
-		background-color: #f8f8f8;
+		background: $page-bg-f8;
 	}
 
 	.home_container {
+		height: 100vh;
+		background: linear-gradient(180deg, #efe7d8 0%, #f7f4ee 220rpx, #f7f4ee 100%);
+	}
+
+	.hero_shell {
+		padding: 0 0 24rpx;
+	}
+
+	.hero_panel {
+		position: relative;
+		min-height: 560rpx;
+		padding-left: 40rpx;
+		padding-right: 40rpx;
+		padding-bottom: 60rpx;
+		background: linear-gradient(180deg, #1c1712 0%, #2a2218 100%);
+		border-bottom-left-radius: 48rpx;
+		border-bottom-right-radius: 48rpx;
+	}
+
+	.brand_row {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: 20rpx;
+		margin-bottom: 34rpx;
+	}
+
+	.brand_copy {
+		flex: 1;
+		min-width: 0;
+	}
+
+	.brand_subtitle {
+		font-size: 22rpx;
+		letter-spacing: 6rpx;
+		color: rgba(255, 245, 220, 0.7);
+	}
+
+	.brand_title {
+		margin-top: 8rpx;
+		font-size: 46rpx;
+		font-weight: 700;
+		letter-spacing: 4rpx;
+		color: $font-color-white;
+		line-height: 1.18;
+	}
+
+	.brand_logo {
+		width: 88rpx;
+		height: 88rpx;
+		flex-shrink: 0;
+		border-radius: 24rpx;
+		background: rgba(255, 255, 255, 0.08);
+	}
+
+	.search_box {
+		display: flex;
+		align-items: center;
+		height: 88rpx;
+		padding: 0 28rpx;
+		border: 1rpx solid rgba(255, 255, 255, 0.14);
+		border-radius: 44rpx;
+		background: rgba(255, 255, 255, 0.08);
+		backdrop-filter: blur(12rpx);
+		box-shadow: 0 12rpx 28rpx rgba(0, 0, 0, 0.12);
+	}
+
+	.search_icon {
+		font-size: 30rpx;
+		color: rgba(255, 255, 255, 0.72);
+		margin-right: 18rpx;
+	}
+
+	.search_text {
+		font-size: 26rpx;
+		color: rgba(255, 255, 255, 0.7);
+		flex: 1;
+	}
+
+	.hero_copy {
+		margin-top: 38rpx;
+		display: flex;
+		flex-direction: column;
+		gap: 18rpx;
+		padding-right: 20rpx;
+	}
+
+	.hero_copy-title {
+		font-size: 38rpx;
+		line-height: 1.42;
+		font-weight: 600;
+		color: $font-color-white;
+	}
+
+	.hero_copy-desc {
+		font-size: 24rpx;
+		line-height: 1.8;
+		color: rgba(255, 255, 255, 0.76);
+	}
+
+	.section {
+		padding: 0 32rpx;
+		margin-bottom: 44rpx;
+	}
+
+	.category_section {
+		margin-top: -60rpx;
+		position: relative;
+		z-index: 3;
+	}
+
+	.category_panel {
+		padding: 26rpx 24rpx 22rpx;
+		border-radius: 30rpx;
+		background: rgba(255, 253, 249, 0.98);
+		box-shadow: 0 18rpx 40rpx rgba(33, 24, 10, 0.1);
+		border: 1rpx solid rgba(138, 120, 80, 0.08);
+	}
+
+	.category_panel-header {
+		display: flex;
+		align-items: flex-end;
+		justify-content: space-between;
+		gap: 24rpx;
+		margin-bottom: 18rpx;
+	}
+
+	.category_panel-caption {
+		font-size: 18rpx;
+		letter-spacing: 4rpx;
+		text-transform: uppercase;
+		color: $font-color-lightGrey;
+	}
+
+	.category_panel-title {
+		margin-top: 8rpx;
+		font-size: 32rpx;
+		font-weight: 700;
+		color: $font-color-darkGrey;
+	}
+
+	.category_panel-tip {
+		padding-bottom: 6rpx;
+		font-size: 22rpx;
+		color: $font-color-lightGrey;
+	}
+
+	.category_scroll {
+		white-space: nowrap;
+	}
+
+	.category_list {
+		display: inline-flex;
+		gap: 16rpx;
+		padding: 8rpx 4rpx 4rpx;
+	}
+
+	.category_chip {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-width: 148rpx;
+		padding: 18rpx 22rpx;
+		border-radius: 999rpx;
+		background: #f8f4ed;
+		border: 1rpx solid rgba(138, 120, 80, 0.08);
+		color: $font-color-mediumGray;
+		font-size: 24rpx;
+		box-shadow: 0 8rpx 18rpx rgba(0, 0, 0, 0.04);
+		transition: all 0.2s ease;
+
+		&.active {
+			background: linear-gradient(135deg, #9b875a 0%, #75643f 100%);
+			color: $font-color-white;
+			border-color: transparent;
+			box-shadow: 0 14rpx 28rpx rgba(117, 100, 63, 0.28);
+
+			.category_icon-wrap {
+				background: rgba(255, 255, 255, 0.16);
+			}
+		}
+	}
+
+	.category_icon-wrap {
+		width: 42rpx;
+		height: 42rpx;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		margin-right: 10rpx;
+		border-radius: 50%;
+		background: rgba(138, 120, 80, 0.08);
+	}
+
+	.category_icon {
+		width: 28rpx;
+		height: 28rpx;
+	}
+
+	.category_name {
+		font-size: 25rpx;
+		font-weight: 500;
+	}
+
+	.section_header {
+		display: flex;
+		align-items: flex-end;
+		justify-content: space-between;
+		gap: 20rpx;
+		margin-bottom: 24rpx;
+	}
+
+	.section_caption {
+		font-size: 20rpx;
+		letter-spacing: 4rpx;
+		text-transform: uppercase;
+		color: $font-color-lightGrey;
+		margin-bottom: 8rpx;
+	}
+
+	.section_title {
+		font-size: 38rpx;
+		font-weight: 700;
+		color: $font-color-darkGrey;
+	}
+
+	.section_line {
+		flex: 1;
+		height: 2rpx;
+		margin-bottom: 12rpx;
+		background: linear-gradient(90deg, rgba(138, 120, 80, 0.3) 0%, rgba(138, 120, 80, 0) 100%);
+	}
+
+	.section_more {
+		font-size: 24rpx;
+		color: $theme-color;
+		padding-bottom: 10rpx;
+	}
+
+	.feature_swiper {
+		height: 380rpx;
+	}
+
+	.feature_card {
+		position: relative;
+		height: 100%;
+		overflow: hidden;
+		border-radius: 32rpx;
+		box-shadow: 0 24rpx 44rpx $shadow-color-strong;
+	}
+
+	.feature_image,
+	.feature_mask {
+		position: absolute;
+		inset: 0;
 		width: 100%;
-		height: auto;
-		padding-bottom: var(--window-bottom);
+		height: 100%;
+	}
 
-		.svg-container {
-			width: 100%;
-			height: 500upx;
-			position: fixed;
-			top: 0;
-			z-index: -1;
+	.feature_mask {
+		background: linear-gradient(180deg, rgba(0, 0, 0, 0.04) 0%, rgba(0, 0, 0, 0.58) 100%);
+	}
 
-			.svg-element {
-				width: 100%;
-				height: 500upx;
-				background-color: #F8D347;
-				border-radius: 0 0 50% 50% / 0% 0% 15% 15%;
-				overflow: hidden;
-			}
-		}
+	.feature_content {
+		position: absolute;
+		left: 28rpx;
+		right: 28rpx;
+		bottom: 30rpx;
+		display: flex;
+		flex-direction: column;
+	}
 
-		.home_card {
-			gap: 20rpx;
-			padding: 30rpx;
-			background-color: #ffffff;
+	.feature_tag {
+		align-self: flex-start;
+		padding: 8rpx 18rpx;
+		margin-bottom: 14rpx;
+		border-radius: 999rpx;
+		background: rgba(255, 255, 255, 0.16);
+		color: rgba(255, 255, 255, 0.92);
+		font-size: 22rpx;
+	}
 
-			.card-item {
-				width: 50%;
-				height: 320rpx;
-			}
+	.feature_title {
+		font-size: 36rpx;
+		font-weight: 700;
+		color: $font-color-white;
+		margin-bottom: 10rpx;
+	}
 
-			.left-box {
-				width: 100%;
-				height: 100%;
-				background-color: #effdff;
-				border-radius: 30rpx;
-			}
+	.feature_desc {
+		font-size: 24rpx;
+		line-height: 1.6;
+		color: rgba(255, 255, 255, 0.82);
+	}
 
-			.card-item:nth-child(2) {
-				flex-direction: column;
-				gap: 20rpx;
-			}
+	.product_grid {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: space-between;
+		row-gap: 24rpx;
+	}
 
-			.right-top-box,
-			.right-bottom-box {
-				width: 100%;
-				height: 50%;
-				border-radius: 30rpx;
-			}
+	.product_card {
+		width: calc(50% - 12rpx);
+		background: $block-bg-white;
+		border-radius: 28rpx;
+		overflow: hidden;
+		box-shadow: 0 12rpx 30rpx $shadow-color-soft;
+	}
 
-			.right-top-box {
-				background-color: #f8f8f8;
-			}
+	.product_image {
+		width: 100%;
+		height: 260rpx;
+		background: $block-bg-f8;
+	}
 
-			.right-bottom-box {
-				background-color: #fef8f3;
-			}
-		}
+	.product_body {
+		padding: 22rpx;
+	}
 
-		.home_main {
-			width: 100%;
-			height: 100%;
-			overflow-y: scroll;
+	.product_name {
+		font-size: 28rpx;
+		line-height: 1.5;
+		font-weight: 600;
+		color: $font-color-darkGrey;
+		min-height: 84rpx;
+	}
 
-			.main_tabs {
-				width: 100%;
-				padding: 20rpx;
+	.product_desc {
+		margin-top: 10rpx;
+		font-size: 22rpx;
+		line-height: 1.6;
+		color: $font-color-lightGrey;
+		min-height: 70rpx;
+	}
 
-				.main_tabs-left {
-					flex: 1;
-					height: 80rpx;
+	.product_footer {
+		display: flex;
+		justify-content: space-between;
+		align-items: flex-end;
+		margin-top: 18rpx;
+		gap: 12rpx;
+	}
 
-					.tab_item {
-						width: 120rpx;
-						height: 80rpx;
-						font-size: $font-size-32;
-						font-weight: blod;
-						color: $font-color-darkGrey;
-						flex-direction: column;
+	.product_price {
+		font-size: 30rpx;
+		font-weight: 700;
+		color: $theme-color;
+	}
 
-						.line {
-							width: 30rpx;
-							height: 20rpx;
-							border-radius: 90%;
-							border-bottom: 4rpx solid transparent;
-							transition: all 0.3s linear;
-						}
+	.product_origin {
+		margin-left: 10rpx;
+		font-size: 20rpx;
+		color: $font-color-lightGrey;
+		text-decoration: line-through;
+	}
 
-						&.active {
-							font-size: $font-size-32;
-							font-weight: blod;
-							color: #47cfc8;
-						}
+	.product_sales {
+		font-size: 20rpx;
+		color: $font-color-lightGrey;
+	}
 
-						&.active .line {
-							border-bottom: 4rpx solid #47cfc8;
-						}
-					}
-				}
+	.story_section {
+		padding-bottom: calc(30rpx + env(safe-area-inset-bottom));
+	}
 
-				.main_tabs-right {
+	.story_card {
+		padding: 30rpx;
+		border-radius: 30rpx;
+		background: linear-gradient(180deg, #1d1914 0%, #292219 100%);
+		box-shadow: 0 22rpx 40rpx $shadow-color-strong;
+	}
 
-					.txt,
-					.icon-arrow-right {
-						font-size: 24rpx;
-						color: #cccccc;
-						margin-bottom: 20rpx;
-					}
-				}
-			}
+	.story_text {
+		font-size: 25rpx;
+		line-height: 1.8;
+		color: rgba(255, 255, 255, 0.82);
+	}
 
-			.main_list {
-				padding: 0 30rpx;
+	.story_tags {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 14rpx;
+		margin-top: 24rpx;
+	}
 
-				.list_item {
-					background: #ffffff;
-					border-radius: 60rpx;
-					margin-bottom: 30rpx;
-					padding: 30rpx;
-
-					.title-box {
-						padding: 0rpx 10rpx;
-
-						.title {
-							flex: 1;
-							font-size: $font-size-28;
-							font-weight: bold;
-						}
-					}
-
-					.content-box {
-						margin-top: 20rpx;
-
-						.picture {
-							width: 132rpx;
-							height: 132rpx;
-							border-radius: 20rpx;
-							margin-right: 20rpx;
-						}
-
-						.info {
-							flex: 1;
-
-							.desc {
-								width: 100%;
-								font-size: 28rpx;
-								color: #999999;
-							}
-
-							.badge {
-								flex-wrap: wrap;
-								margin-top: 20rpx;
-
-								.badge-item {
-									font-size: 20rpx;
-									background: #dbfcf3;
-									border-radius: 10rpx;
-									margin-right: 10rpx;
-									padding: 5rpx 15rpx;
-								}
-							}
-						}
-					}
-
-					.author-box {
-						margin-top: 20rpx;
-
-						.info {
-							width: 70%;
-
-							.header {
-								width: 46rpx;
-								height: 46rpx;
-								border-radius: 50%;
-								margin-right: 20rpx;
-							}
-
-							text {
-								font-size: 24rpx;
-							}
-						}
-
-						.read {
-							flex: 1;
-							font-size: 24rpx;
-							color: #999999;
-
-							.icon-yanjing {
-								margin-right: 10rpx;
-							}
-						}
-					}
-				}
-			}
-		}
-
-		.ad {
-			position: fixed;
-			bottom: 0;
-		}
+	.story_tag {
+		padding: 10rpx 18rpx;
+		border-radius: 999rpx;
+		font-size: 22rpx;
+		color: #f3ead5;
+		background: rgba(255, 255, 255, 0.08);
 	}
 </style>

@@ -9,10 +9,10 @@
 
 		<view class="order_list" v-if="orders.length">
 			<view class="order_card" v-for="item in orders" :key="item.id" @click="openDetail(item.id)">
-				<image class="order_image" :src="item.productImage" mode="aspectFill"></image>
+				<image class="order_image" :src="item.product?.images?.[0] || '/static/images/logo.png'" mode="aspectFill"></image>
 				<view class="order_info">
 					<view class="order_top">
-						<view class="order_name one-line-ellipsis">{{ item.productName }}</view>
+						<view class="order_name one-line-ellipsis">{{ item.product?.name || '商品信息' }}</view>
 						<view class="order_status" :class="statusClass(item.status)">{{ statusLabel(item.status) }}</view>
 					</view>
 					<view class="order_meta">{{ formatDate(item.createdAt) }} · 数量 {{ item.quantity }}</view>
@@ -35,14 +35,24 @@
 <script lang="ts" setup>
 	import { ref } from 'vue';
 	import { onShow } from '@dcloudio/uni-app';
-	import { getOrderStatusMeta, listOrders } from '@/shared/mock/craft';
+	import Api from '@/services/api';
 
 	const statusBarHeight = ref(0);
-	const orders = ref(listOrders());
+	const orders = ref<any[]>([]);
+
+	const syncOrders = async () => {
+		try {
+			const res = await Api.order.getOrderListApi();
+			orders.value = res?.data || [];
+		} catch (error) {
+			console.error('syncOrders failed', error);
+			orders.value = [];
+		}
+	};
 
 	onShow(() => {
 		statusBarHeight.value = getApp().globalData?.statusBarHeight || 0;
-		orders.value = listOrders();
+		void syncOrders();
 	});
 
 	const goBack = () => {
@@ -61,8 +71,30 @@
 		});
 	};
 
-	const statusLabel = (status: string) => getOrderStatusMeta(status as any).label;
-	const statusClass = (status: string) => getOrderStatusMeta(status as any).tone;
+	const statusLabel = (status: string) => {
+		switch (status) {
+			case 'PENDING':
+				return '待处理';
+			case 'COMPLETED':
+				return '已完成';
+			case 'CANCELLED':
+				return '已取消';
+			default:
+				return status;
+		}
+	};
+	const statusClass = (status: string) => {
+		switch (status) {
+			case 'PENDING':
+				return 'warning';
+			case 'COMPLETED':
+				return 'success';
+			case 'CANCELLED':
+				return 'danger';
+			default:
+				return 'info';
+		}
+	};
 	const formatDate = (value: string) => new Date(value).toLocaleString('zh-CN');
 </script>
 

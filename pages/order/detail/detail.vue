@@ -27,9 +27,9 @@
 
 			<view class="section_title">商品信息</view>
 			<view class="info_card product_card">
-				<image class="product_image" :src="order.productImage" mode="aspectFill"></image>
+				<image class="product_image" :src="order.product?.images?.[0] || '/static/images/logo.png'" mode="aspectFill"></image>
 				<view class="product_info">
-					<view class="product_name">{{ order.productName }}</view>
+					<view class="product_name">{{ order.product?.name || '商品信息' }}</view>
 					<view class="product_meta">单价 ¥{{ order.unitPrice }} × {{ order.quantity }}</view>
 					<view class="product_total">实付 ¥{{ order.totalPrice }}</view>
 				</view>
@@ -88,17 +88,45 @@
 <script lang="ts" setup>
 	import { computed, ref } from 'vue';
 	import { onLoad } from '@dcloudio/uni-app';
-	import { getOrderById, getOrderStatusMeta } from '@/shared/mock/craft';
+	import Api from '@/services/api';
 
 	const statusBarHeight = ref(0);
-	const order = ref<ReturnType<typeof getOrderById>>();
+	const order = ref<any>();
 
-	const statusLabel = computed(() => getOrderStatusMeta(order.value?.status || 'PENDING').label);
-	const statusClass = computed(() => getOrderStatusMeta(order.value?.status || 'PENDING').tone);
+	const statusLabel = computed(() => {
+		switch (order.value?.status || 'PENDING') {
+			case 'PENDING':
+				return '待处理';
+			case 'COMPLETED':
+				return '已完成';
+			case 'CANCELLED':
+				return '已取消';
+			default:
+				return order.value?.status || '待处理';
+		}
+	});
+	const statusClass = computed(() => {
+		switch (order.value?.status || 'PENDING') {
+			case 'PENDING':
+				return 'warning';
+			case 'COMPLETED':
+				return 'success';
+			case 'CANCELLED':
+				return 'danger';
+			default:
+				return 'info';
+		}
+	});
 
-	onLoad((options) => {
+	onLoad(async (options) => {
 		statusBarHeight.value = getApp().globalData?.statusBarHeight || 0;
-		order.value = getOrderById(options?.id || '');
+		try {
+			const res = await Api.order.getOrderDetailApi(options?.id || '');
+			order.value = res?.data;
+		} catch (error) {
+			console.error('getOrderDetail failed', error);
+			order.value = undefined;
+		}
 	});
 
 	const goBack = () => {

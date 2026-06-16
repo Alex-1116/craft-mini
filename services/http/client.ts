@@ -110,7 +110,7 @@ class HttpClient {
 					'Accept': 'application/json',
 					'Content-Type': 'application/json',
 					...(signature ? { signature } : {}),
-					...(accessToken ? { Authorization: accessToken } : {}),
+					...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
 					...this.defaultConfig.header,
 					...restConfig.header
 				}

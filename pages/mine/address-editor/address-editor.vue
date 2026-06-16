@@ -54,11 +54,12 @@
 <script lang="ts" setup>
 	import { ref } from 'vue';
 	import { onLoad } from '@dcloudio/uni-app';
-	import { getAddressById, listAddresses, upsertAddress } from '@/shared/mock/craft';
+	import Api from '@/services/api';
 
 	const statusBarHeight = ref(0);
 	const editingId = ref('');
 	const redirectTarget = ref('/pages/mine/address-editor/address-editor');
+	const loading = ref(false);
 	const formState = ref({
 		name: '',
 		phone: '',
@@ -79,28 +80,49 @@
 		}
 		editingId.value = id;
 		if (!id) {
-			formState.value.isDefault = listAddresses().length === 0;
+			formState.value.isDefault = true;
 			return;
 		}
-		const target = getAddressById(id);
-		if (!target) {
-			uni.showToast({
-				icon: 'none',
-				title: '地址不存在'
-			});
+		void loadAddressDetail(id);
+	});
+
+	const loadAddressDetail = async (id: string) => {
+		try {
+			const res = await Api.address.getAddressDetailApi(id);
+			const target = res?.data;
+			if (!target) {
+				uni.showToast({
+					icon: 'none',
+					title: '地址不存在'
+				});
+				setTimeout(() => {
+					returnToAddressList();
+				}, 250);
+				return;
+			}
+
+			formState.value = {
+				name: target.name,
+				phone: target.phone,
+				region: target.region,
+				detail: target.detail,
+				isDefault: target.isDefault
+			};
+		} catch (error: any) {
+			if (error?.status === 401) {
+				uni.removeStorageSync('token');
+				uni.removeStorageSync('userInfo');
+				uni.redirectTo({
+					url: `/pages/auth/login?redirect=${encodeURIComponent(redirectTarget.value)}`
+				});
+				return;
+			}
+
 			setTimeout(() => {
 				returnToAddressList();
 			}, 250);
-			return;
 		}
-		formState.value = {
-			name: target.name,
-			phone: target.phone,
-			region: target.region,
-			detail: target.detail,
-			isDefault: target.isDefault
-		};
-	});
+	};
 
 	const goBack = () => {
 		if (getCurrentPages().length > 1) {
@@ -114,7 +136,11 @@
 		uni.redirectTo({ url: '/pages/mine/address/address' });
 	};
 
-	const submitForm = () => {
+	const submitForm = async () => {
+		if (loading.value) {
+			return;
+		}
+
 		if (!formState.value.name || !/^1\d{10}$/.test(formState.value.phone) || !formState.value.region || !formState.value.detail) {
 			uni.showToast({
 				icon: 'none',
@@ -122,22 +148,42 @@
 			});
 			return;
 		}
+
 		const isEditing = !!editingId.value;
-		upsertAddress({
-			id: editingId.value || undefined,
+		const payload = {
 			name: formState.value.name.trim(),
 			phone: formState.value.phone,
 			region: formState.value.region.trim(),
 			detail: formState.value.detail.trim(),
 			isDefault: formState.value.isDefault
-		});
-		uni.showToast({
-			icon: 'none',
-			title: isEditing ? '地址已更新' : '地址已新增'
-		});
-		setTimeout(() => {
-			goBack();
-		}, 250);
+		};
+
+		loading.value = true;
+		try {
+			if (isEditing) {
+				await Api.address.updateAddressApi(editingId.value, payload);
+			} else {
+				await Api.address.createAddressApi(payload);
+			}
+
+			uni.showToast({
+				icon: 'none',
+				title: isEditing ? '地址已更新' : '地址已新增'
+			});
+			setTimeout(() => {
+				goBack();
+			}, 250);
+		} catch (error: any) {
+			if (error?.status === 401) {
+				uni.removeStorageSync('token');
+				uni.removeStorageSync('userInfo');
+				uni.redirectTo({
+					url: `/pages/auth/login?redirect=${encodeURIComponent(redirectTarget.value)}`
+				});
+			}
+		} finally {
+			loading.value = false;
+		}
 	};
 </script>
 

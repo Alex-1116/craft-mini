@@ -47,7 +47,7 @@
 
 				<view class="tips_card">
 					<text class="tips_title">当前阶段说明</text>
-					<text class="tips_text">注册页已按网站端视觉语言完成迁移，当前先提供前端表单流程与交互样式，后续再接入你的真实注册接口。</text>
+					<text class="tips_text">当前已接入网站端注册接口，完成结缘后可直接返回登录页，使用雅号与密匙登录进入小程序。</text>
 				</view>
 
 				<view class="footer_text">
@@ -62,6 +62,7 @@
 <script lang="ts" setup>
 	import { ref } from 'vue';
 	import { onLoad } from '@dcloudio/uni-app';
+	import Api from '@/services/api';
 
 	const statusBarHeight = ref(0);
 	const loading = ref(false);
@@ -86,7 +87,7 @@
 		});
 	};
 
-	const submitRegister = () => {
+	const submitRegister = async () => {
 		if (loading.value) {
 			return;
 		}
@@ -116,8 +117,13 @@
 		}
 
 		loading.value = true;
-		setTimeout(() => {
-			loading.value = false;
+		try {
+			await Api.auth.mobileRegisterApi({
+				username: formState.value.username.trim(),
+				email: formState.value.email.trim() || undefined,
+				password: formState.value.password,
+				confirmPassword: formState.value.confirmPassword
+			});
 			uni.showToast({
 				icon: 'none',
 				title: '注册成功，请登录'
@@ -127,7 +133,9 @@
 					url: '/pages/auth/login'
 				});
 			}, 400);
-		}, 700);
+		} finally {
+			loading.value = false;
+		}
 	};
 </script>
 

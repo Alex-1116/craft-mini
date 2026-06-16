@@ -63,30 +63,51 @@
 	import { computed, ref } from 'vue';
 	import { useStore } from 'vuex';
 	import { onLoad, onShow } from '@dcloudio/uni-app';
-	import {
-		type CraftAddress,
-		listAddresses,
-		removeAddress,
-		setDefaultAddress
-	} from '@/shared/mock/craft';
+	import Api from '@/services/api';
+
+	interface AddressItem {
+		id: string;
+		name: string;
+		phone: string;
+		region: string;
+		detail: string;
+		isDefault: boolean;
+	}
 
 	const store = useStore();
 	const statusBarHeight = ref(0);
 	const isLoggedIn = computed(() => store.getters.isLoggedIn);
-	const addressList = ref<CraftAddress[]>([]);
+	const addressList = ref<AddressItem[]>([]);
 	const defaultAddress = computed(() => addressList.value.find((item) => item.isDefault) || null);
+	const loading = ref(false);
 
-	const syncAddresses = () => {
-		addressList.value = listAddresses();
+	const syncAddresses = async () => {
+		if (!isLoggedIn.value) {
+			addressList.value = [];
+			return;
+		}
+
+		loading.value = true;
+		try {
+			const res = await Api.address.getAddressListApi();
+			addressList.value = res?.data || [];
+		} catch (error: any) {
+			if (error?.status === 401) {
+				store.commit('logout');
+				addressList.value = [];
+			}
+		} finally {
+			loading.value = false;
+		}
 	};
 
 	onLoad(() => {
 		statusBarHeight.value = getApp().globalData?.statusBarHeight || 0;
-		syncAddresses();
+		void syncAddresses();
 	});
 
 	onShow(() => {
-		syncAddresses();
+		void syncAddresses();
 	});
 
 	const goBack = () => {
@@ -117,13 +138,23 @@
 		});
 	};
 
-	const makeDefault = (id: string) => {
-		setDefaultAddress(id);
-		syncAddresses();
-		uni.showToast({
-			icon: 'none',
-			title: '已设为默认地址'
-		});
+	const makeDefault = async (id: string) => {
+		if (loading.value) {
+			return;
+		}
+
+		try {
+			await Api.address.setDefaultAddressApi(id);
+			await syncAddresses();
+			uni.showToast({
+				icon: 'none',
+				title: '已设为默认地址'
+			});
+		} catch (error: any) {
+			if (error?.status === 401) {
+				store.commit('logout');
+			}
+		}
 	};
 
 	const deleteAddress = (id: string) => {
@@ -134,12 +165,20 @@
 				if (!res.confirm) {
 					return;
 				}
-				removeAddress(id);
-				syncAddresses();
-				uni.showToast({
-					icon: 'none',
-					title: '地址已删除'
-				});
+				void (async () => {
+					try {
+						await Api.address.deleteAddressApi(id);
+						await syncAddresses();
+						uni.showToast({
+							icon: 'none',
+							title: '地址已删除'
+						});
+					} catch (error: any) {
+						if (error?.status === 401) {
+							store.commit('logout');
+						}
+					}
+				})();
 			}
 		});
 	};

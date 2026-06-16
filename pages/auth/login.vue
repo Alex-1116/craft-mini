@@ -94,6 +94,7 @@
 	import { computed, ref } from 'vue';
 	import { useStore } from 'vuex';
 	import { onLoad } from '@dcloudio/uni-app';
+	import Api from '@/services/api';
 
 	const store = useStore();
 	const statusBarHeight = ref(0);
@@ -158,14 +159,7 @@
 		});
 	};
 
-	const completeLogin = (displayName: string) => {
-		const token = `mock-token-${Date.now()}`;
-		const userInfo = {
-			name: displayName,
-			username: displayName,
-			email: `${displayName}@craft.local`,
-			role: 'USER'
-		};
+	const completeLogin = (token: string, userInfo: Record<string, any>) => {
 		store.commit('updateToken', token);
 		store.commit('updateUserInfo', userInfo);
 		uni.setStorageSync('token', token);
@@ -193,7 +187,7 @@
 		}, 300);
 	};
 
-	const submitLogin = () => {
+	const submitLogin = async () => {
 		if (loading.value) {
 			return;
 		}
@@ -214,13 +208,28 @@
 				});
 				return;
 			}
+
+			uni.showToast({
+				icon: 'none',
+				title: '验证码登录暂未接入，请使用雅号登录'
+			});
+			return;
 		}
 
 		loading.value = true;
-		setTimeout(() => {
+		try {
+			const res = await Api.auth.mobileLoginApi({
+				username: formState.value.username.trim(),
+				password: formState.value.password
+			});
+			const result = res?.data;
+			if (!result?.accessToken || !result?.userInfo) {
+				throw new Error('登录返回数据异常');
+			}
+			completeLogin(result.accessToken, result.userInfo);
+		} finally {
 			loading.value = false;
-			completeLogin(usePhoneMode.value ? `雅客${formState.value.phone.slice(-4)}` : formState.value.username);
-		}, 600);
+		}
 	};
 
 	const quickLogin = (name: string) => {

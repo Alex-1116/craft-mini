@@ -122,11 +122,24 @@
 <script lang="ts" setup>
 	import { computed, ref } from 'vue';
 	import { onLoad } from '@dcloudio/uni-app';
-	import { craftProducts } from '@/shared/mock/craft';
+	import Api from '@/services/api';
+	import type { ProductItem } from '@/services/api/modules/product';
 
 	interface CategoryItem {
+		id?: number;
 		name: string;
 		icon: string;
+	}
+
+	interface HomeProductItem {
+		id: string;
+		name: string;
+		category: string;
+		image: string;
+		desc: string;
+		price: number;
+		originPrice?: number | null;
+		sales: number;
 	}
 
 	const statusBarHeight = ref<number>(0);
@@ -136,15 +149,15 @@
 	const capsuleMarginTop = ref<number>(6);
 	const currentCategory = ref('全部');
 
-	const categories: CategoryItem[] = [
+	const categories = ref<CategoryItem[]>([
 		{ name: '全部', icon: '/static/images/category/icon-mairu.png' },
 		{ name: '茶器', icon: '/static/images/category/icon-jianzhi.png' },
 		{ name: '香器', icon: '/static/images/category/icon-shiwu.png' },
 		{ name: '花器', icon: '/static/images/category/icon-hezuo.png' },
 		{ name: '陈设', icon: '/static/images/category/icon-jiaoliu.png' }
-	];
+	]);
 
-	const heroBanners = [
+	const heroBanners = ref([
 		{
 			id: 'hero-1',
 			title: '器物之美，藏于日用',
@@ -166,9 +179,21 @@
 			desc: '在小程序里保留黑金米白的视觉基调，同时降低复杂动效，提升触控体验。',
 			image: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=1200&q=80'
 		}
-	];
+	]);
 
-	const products = ref(craftProducts);
+	const products = ref<HomeProductItem[]>([]);
+
+	const categoryIconMap: Record<string, string> = {
+		手串: '/static/images/category/icon-maichu.png',
+		茶具: '/static/images/category/icon-jianzhi.png',
+		茶器: '/static/images/category/icon-jianzhi.png',
+		香道: '/static/images/category/icon-shiwu.png',
+		香器: '/static/images/category/icon-shiwu.png',
+		摆件: '/static/images/category/icon-jiaoliu.png',
+		陈设: '/static/images/category/icon-jiaoliu.png',
+		装饰画: '/static/images/category/icon-hezuo.png',
+		花器: '/static/images/category/icon-hezuo.png'
+	};
 
 	const filteredProducts = computed(() => {
 		if (currentCategory.value === '全部') {
@@ -176,6 +201,52 @@
 		}
 		return products.value.filter((item) => item.category === currentCategory.value);
 	});
+
+	const mapProduct = (item: ProductItem): HomeProductItem => ({
+		id: item.id,
+		name: item.name,
+		category: item.category?.name || '全部',
+		image: item.images?.[0] || '/static/images/logo.png',
+		desc: item.description || item.material || '东方器物精选',
+		price: item.price,
+		originPrice: item.originalPrice,
+		sales: item.sales
+	});
+
+	const syncHomeData = async () => {
+		try {
+			const [categoryRes, featuredRes, productRes] = await Promise.all([
+				Api.product.getCategoryListApi(),
+				Api.product.getProductListApi({ page: 1, pageSize: 6, featured: true }),
+				Api.product.getProductListApi({ page: 1, pageSize: 12 })
+			]);
+
+			const remoteCategories = (categoryRes?.data || []).map((item: any) => ({
+				id: item.id,
+				name: item.name,
+				icon: categoryIconMap[item.name] || '/static/images/category/icon-watermark.png'
+			}));
+			categories.value = [
+				{ name: '全部', icon: '/static/images/category/icon-mairu.png' },
+				...remoteCategories
+			];
+
+			const featuredList = (featuredRes?.data?.list || []).map((item: ProductItem) => mapProduct(item));
+			const productList = (productRes?.data?.list || []).map((item: ProductItem) => mapProduct(item));
+			if (featuredList.length) {
+				heroBanners.value = featuredList.slice(0, 3).map((item, index) => ({
+					id: item.id,
+					title: item.name,
+					tag: index === 0 ? '东方雅集' : index === 1 ? '本周主推' : '匠心推荐',
+					desc: item.desc,
+					image: item.image
+				}));
+			}
+			products.value = productList;
+		} catch (error) {
+			console.error('syncHomeData failed', error);
+		}
+	};
 
 	const heroPanelStyle = computed(() => ({
 		paddingTop: `${statusBarHeight.value + 16}px`
@@ -193,6 +264,7 @@
 		capsuleWidth.value = getApp().globalData?.capsuleWidth || 92;
 		capsuleHeight.value = getApp().globalData?.capsuleHeight || 32;
 		capsuleMarginTop.value = getApp().globalData?.capsuleMarginTopByStatusBar || 6;
+		void syncHomeData();
 	});
 
 	const switchCategory = (name: string) => {

@@ -10,10 +10,10 @@
 		<view class="content_section" v-if="product">
 			<view class="section_title">商品摘要</view>
 			<view class="product_card">
-				<image class="product_image" :src="product.image" mode="aspectFill"></image>
+				<image class="product_image" :src="product.images?.[0] || '/static/images/logo.png'" mode="aspectFill"></image>
 				<view class="product_info">
 					<view class="product_name">{{ product.name }}</view>
-					<view class="product_desc">{{ product.desc }}</view>
+					<view class="product_desc">{{ product.description || product.material || '东方器物精选' }}</view>
 					<view class="product_meta">
 						<text class="product_price">¥{{ product.price }}</text>
 						<view class="quantity_box">
@@ -86,11 +86,13 @@
 <script lang="ts" setup>
 	import { computed, ref } from 'vue';
 	import { onLoad, onShow } from '@dcloudio/uni-app';
-	import { clearCheckoutDraft, createOrder, getCheckoutDraft, getCraftProductById, getDefaultAddress } from '@/shared/mock/craft';
+	import Api from '@/services/api';
+	import { clearCheckoutDraft, getCheckoutDraft } from '@/shared/mock/craft';
 
 	const statusBarHeight = ref(0);
 	const quantity = ref(1);
-	const product = ref<ReturnType<typeof getCraftProductById> | null>(null);
+	const loading = ref(false);
+	const product = ref<any>(null);
 	const formState = ref({
 		customerName: '',
 		phone: '',
@@ -100,17 +102,41 @@
 
 	const totalPrice = computed(() => ((product.value?.price || 0) * quantity.value).toFixed(2));
 
-	const syncDefaultAddress = () => {
-		const defaultAddress = getDefaultAddress();
-		if (!defaultAddress) {
+	const syncDefaultAddress = async () => {
+		if (!uni.getStorageSync('token')) {
 			return;
 		}
-		formState.value.customerName = defaultAddress.name;
-		formState.value.phone = defaultAddress.phone;
-		formState.value.address = `${defaultAddress.region} ${defaultAddress.detail}`;
+
+		try {
+			const res = await Api.address.getAddressListApi();
+			const defaultAddress = (res?.data || []).find((item: any) => item.isDefault);
+			if (!defaultAddress) {
+				return;
+			}
+			formState.value.customerName = defaultAddress.name;
+			formState.value.phone = defaultAddress.phone;
+			formState.value.address = `${defaultAddress.region} ${defaultAddress.detail}`;
+		} catch (error) {
+			console.error('syncDefaultAddress failed', error);
+		}
 	};
 
-	onLoad(() => {
+	const syncProduct = async () => {
+		const draft = getCheckoutDraft();
+		if (!draft) {
+			return;
+		}
+
+		try {
+			const res = await Api.product.getProductDetailApi(draft.productId);
+			product.value = res?.data || null;
+			quantity.value = draft.quantity || 1;
+		} catch (error) {
+			console.error('syncProduct failed', error);
+		}
+	};
+
+	onLoad(async () => {
 		statusBarHeight.value = getApp().globalData?.statusBarHeight || 0;
 		if (!uni.getStorageSync('token')) {
 			uni.navigateTo({
@@ -118,17 +144,12 @@
 			});
 			return;
 		}
-		const draft = getCheckoutDraft();
-		if (!draft) {
-			return;
-		}
-		product.value = getCraftProductById(draft.productId) || null;
-		quantity.value = draft.quantity || 1;
-		syncDefaultAddress();
+		await syncProduct();
+		await syncDefaultAddress();
 	});
 
 	onShow(() => {
-		syncDefaultAddress();
+		void syncDefaultAddress();
 	});
 
 	const goBack = () => {
@@ -159,8 +180,8 @@
 		});
 	};
 
-	const submitOrder = () => {
-		if (!product.value) {
+	const submitOrder = async () => {
+		if (!product.value || loading.value) {
 			return;
 		}
 
@@ -172,28 +193,35 @@
 			return;
 		}
 
-		const order = createOrder({
-			productId: product.value.id,
-			productName: product.value.name,
-			productImage: product.value.image,
-			quantity: quantity.value,
-			unitPrice: product.value.price,
-			totalPrice: Number(totalPrice.value),
-			customerName: formState.value.customerName,
-			phone: formState.value.phone,
-			address: formState.value.address,
-			notes: formState.value.notes
-		});
-		clearCheckoutDraft();
-		uni.showToast({
-			icon: 'none',
-			title: '订单已提交'
-		});
-		setTimeout(() => {
-			uni.redirectTo({
-				url: `/pages/order/detail/detail?id=${order.id}`
+		loading.value = true;
+		try {
+			const res = await Api.order.createOrderApi({
+				productId: product.value.id,
+				quantity: quantity.value,
+				unitPrice: product.value.price,
+				totalPrice: Number(totalPrice.value),
+				customerName: formState.value.customerName,
+				phone: formState.value.phone,
+				address: formState.value.address,
+				notes: formState.value.notes
 			});
-		}, 300);
+			const order = res?.data;
+			if (!order?.id) {
+				throw new Error('订单创建失败');
+			}
+			clearCheckoutDraft();
+			uni.showToast({
+				icon: 'none',
+				title: '订单已提交'
+			});
+			setTimeout(() => {
+				uni.redirectTo({
+					url: `/pages/order/detail/detail?id=${order.id}`
+				});
+			}, 300);
+		} finally {
+			loading.value = false;
+		}
 	};
 </script>
 

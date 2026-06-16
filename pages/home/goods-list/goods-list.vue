@@ -75,25 +75,78 @@
 <script lang="ts" setup>
 	import { computed, ref } from 'vue';
 	import { onLoad } from '@dcloudio/uni-app';
-	import { getCraftCategories, searchCraftProducts } from '@/shared/mock/craft';
+	import Api from '@/services/api';
+	import type { ProductItem } from '@/services/api/modules/product';
+
+	interface ListProductItem {
+		id: string;
+		name: string;
+		category: string;
+		image: string;
+		desc: string;
+		price: number;
+		originPrice?: number | null;
+		sales: number;
+	}
 
 	const statusBarHeight = ref(0);
-	const categories = getCraftCategories();
+	const categories = ref<string[]>(['全部']);
 	const searchKey = ref('');
 	const appliedKeyword = ref('');
 	const currentCategory = ref('全部');
+	const products = ref<ListProductItem[]>([]);
 
-	const filteredProducts = computed(() => searchCraftProducts(appliedKeyword.value, currentCategory.value));
+	const filteredProducts = computed(() => {
+		return products.value.filter((item) => {
+			const matchCategory = currentCategory.value === '全部' || item.category === currentCategory.value;
+			const keyword = appliedKeyword.value.trim().toLowerCase();
+			const matchKeyword = !keyword ||
+				item.name.toLowerCase().includes(keyword) ||
+				item.desc.toLowerCase().includes(keyword) ||
+				item.category.toLowerCase().includes(keyword);
+			return matchCategory && matchKeyword;
+		});
+	});
+
+	const mapProduct = (item: ProductItem): ListProductItem => ({
+		id: item.id,
+		name: item.name,
+		category: item.category?.name || '未分类',
+		image: item.images?.[0] || '/static/images/logo.png',
+		desc: item.description || item.material || '东方器物精选',
+		price: item.price,
+		originPrice: item.originalPrice,
+		sales: item.sales
+	});
+
+	const syncProducts = async () => {
+		try {
+			const [categoryRes, productRes] = await Promise.all([
+				Api.product.getCategoryListApi(),
+				Api.product.getProductListApi({ page: 1, pageSize: 50 })
+			]);
+			const remoteCategories = (categoryRes?.data || []).map((item: any) => item.name);
+			categories.value = ['全部', ...remoteCategories];
+			products.value = (productRes?.data?.list || []).map((item: ProductItem) => mapProduct(item));
+		} catch (error) {
+			console.error('syncProducts failed', error);
+		}
+	};
 
 	onLoad((options) => {
 		statusBarHeight.value = getApp().globalData?.statusBarHeight || 0;
 		const category = decodeURIComponent(options?.category || '全部');
 		const keyword = decodeURIComponent(options?.keyword || '');
-		if (categories.includes(category)) {
+		if (categories.value.includes(category)) {
 			currentCategory.value = category;
 		}
 		searchKey.value = keyword;
 		appliedKeyword.value = keyword;
+		void syncProducts().then(() => {
+			if (categories.value.includes(category)) {
+				currentCategory.value = category;
+			}
+		});
 	});
 
 	const goBack = () => {

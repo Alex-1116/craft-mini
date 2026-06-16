@@ -64,15 +64,82 @@
 <script lang="ts" setup>
 	import { ref } from 'vue';
 	import { onLoad } from '@dcloudio/uni-app';
-	import { craftProducts, getCraftProductById, saveCheckoutDraft } from '@/shared/mock/craft';
+	import Api from '@/services/api';
+	import { saveCheckoutDraft } from '@/shared/mock/craft';
+
+	interface DetailProduct {
+		id: string;
+		name: string;
+		category: string;
+		images: string[];
+		image: string;
+		price: number;
+		originPrice?: number | null;
+		sales: number;
+		desc: string;
+		material: string;
+		dimensions: string;
+		content: string[];
+	}
 
 	const statusBarHeight = ref(0);
-	const product = ref(getCraftProductById('p-1') || craftProducts[0]);
+	const product = ref<DetailProduct>({
+		id: '',
+		name: '',
+		category: '',
+		images: [],
+		image: '',
+		price: 0,
+		originPrice: null,
+		sales: 0,
+		desc: '',
+		material: '',
+		dimensions: '',
+		content: []
+	});
+
+	const parseContent = (value?: string | null) => {
+		if (!value) {
+			return [];
+		}
+
+		return value
+			.replace(/<[^>]+>/g, '\n')
+			.split('\n')
+			.map((item) => item.trim())
+			.filter(Boolean);
+	};
+
+	const syncProductDetail = async (id: string) => {
+		try {
+			const res = await Api.product.getProductDetailApi(id);
+			const data = res?.data;
+			if (!data) {
+				return;
+			}
+
+			product.value = {
+				id: data.id,
+				name: data.name,
+				category: data.category?.name || '未分类',
+				images: data.images || [],
+				image: data.images?.[0] || '/static/images/logo.png',
+				price: data.price,
+				originPrice: data.originalPrice,
+				sales: data.sales,
+				desc: data.description || data.material || '东方器物精选',
+				material: data.material || '以实物为准',
+				dimensions: data.dimensions || '以实物为准',
+				content: parseContent(data.content || data.description)
+			};
+		} catch (error) {
+			console.error('syncProductDetail failed', error);
+		}
+	};
 
 	onLoad((options) => {
 		statusBarHeight.value = getApp().globalData?.statusBarHeight || 0;
-		const target = getCraftProductById(options?.id || '') || craftProducts[0];
-		product.value = target;
+		void syncProductDetail(options?.id || '');
 	});
 
 	const goBack = () => {

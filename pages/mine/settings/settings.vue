@@ -43,13 +43,13 @@
 
 <script lang="ts" setup>
 	import { computed, ref } from 'vue';
-	import { useStore } from 'vuex';
 	import { onLoad } from '@dcloudio/uni-app';
+	import { useUserStore } from '@/store';
 
-	const store = useStore();
+	const userStore = useUserStore();
 	const statusBarHeight = ref(0);
-	const isLoggedIn = computed(() => store.getters.isLoggedIn);
-	const userInfo = computed(() => store.getters.getUserInfo || {});
+	const isLoggedIn = computed(() => userStore.isLoggedIn);
+	const userInfo = computed(() => userStore.userInfo || {});
 	const displayName = computed(() => userInfo.value.name || userInfo.value.username || '雅致来客');
 	const profileText = computed(() => userInfo.value.email || '欢迎回到雅致工艺');
 
@@ -96,7 +96,7 @@
 	};
 
 	const logout = () => {
-		store.commit('logout');
+		userStore.logout();
 		uni.showToast({
 			icon: 'none',
 			title: '已退出登录'

@@ -88,6 +88,7 @@
 	import { onLoad, onShow } from '@dcloudio/uni-app';
 	import Api from '@/services/api';
 	import { clearCheckoutDraft, getCheckoutDraft } from '@/shared/mock/craft';
+	import { ensureSession, hasAccessToken } from '@/shared/auth/session';
 
 	const statusBarHeight = ref(0);
 	const quantity = ref(1);
@@ -103,7 +104,7 @@
 	const totalPrice = computed(() => ((product.value?.price || 0) * quantity.value).toFixed(2));
 
 	const syncDefaultAddress = async () => {
-		if (!uni.getStorageSync('token')) {
+		if (!hasAccessToken()) {
 			return;
 		}
 
@@ -138,10 +139,7 @@
 
 	onLoad(async () => {
 		statusBarHeight.value = getApp().globalData?.statusBarHeight || 0;
-		if (!uni.getStorageSync('token')) {
-			uni.navigateTo({
-				url: '/pages/auth/login'
-			});
+		if (!ensureSession('/pages/order/checkout/checkout')) {
 			return;
 		}
 		await syncProduct();
@@ -219,6 +217,8 @@
 					url: `/pages/order/detail/detail?id=${order.id}`
 				});
 			}, 300);
+		} catch (error) {
+			console.error('submitOrder failed', error);
 		} finally {
 			loading.value = false;
 		}

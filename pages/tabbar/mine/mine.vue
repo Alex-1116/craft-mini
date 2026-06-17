@@ -1,13 +1,10 @@
 <template>
 	<scroll-view class="mine_page" scroll-y>
-		<view class="mine_hero" :style="{ paddingTop: `${statusBarHeight + 18}px` }">
+		<view class="mine_hero" :style="{ paddingTop: `${statusBarHeight}px` }">
 			<view class="hero_top">
 				<view>
 					<view class="hero_caption">CRAFT CENTER</view>
 					<view class="hero_title">我的雅集</view>
-				</view>
-				<view class="hero_setting" @click="handleSetting">
-					<text class="iconfont icon-shezhi"></text>
 				</view>
 			</view>
 
@@ -84,17 +81,18 @@
 
 <script lang="ts" setup>
 	import { computed, ref } from 'vue';
-	import { useStore } from 'vuex';
 	import { onShow } from '@dcloudio/uni-app';
 	import { listOrders } from '@/shared/mock/craft';
+	import { clearSession, ensureSession, syncSessionState } from '@/shared/auth/session';
+	import { useUserStore } from '@/store';
 
-	const store = useStore();
+	const userStore = useUserStore();
 	const statusBarHeight = ref(0);
 	const orderCount = ref(0);
 	const avatarUrl = 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&q=80';
 
-	const isLoggedIn = computed(() => store.getters.isLoggedIn);
-	const userInfo = computed(() => store.getters.getUserInfo || {});
+	const isLoggedIn = computed(() => userStore.isLoggedIn);
+	const userInfo = computed(() => userStore.userInfo || {});
 	const displayName = computed(() => (isLoggedIn.value ? (userInfo.value.name || userInfo.value.username || '雅致来客') : '雅致来客'));
 	const profileText = computed(() => userInfo.value.email || '欢迎回到八百徒 · 雅致工艺');
 	const metrics = computed(() => [
@@ -141,6 +139,13 @@
 			action: () => uni.navigateTo({ url: '/pages/mine/about/about' })
 		},
 		{
+			title: '设置',
+			desc: '管理账号状态、通知提醒与缓存',
+			icon: 'icon-shezhi',
+			iconClass: 'dark',
+			action: () => handleSetting()
+		},
+		{
 			title: '小程序功能清单',
 			desc: '查看当前已迁移与待迁移内容',
 			icon: 'icon-gongneng',
@@ -151,6 +156,7 @@
 
 	onShow(() => {
 		statusBarHeight.value = getApp().globalData?.statusBarHeight || 0;
+		syncSessionState();
 		orderCount.value = listOrders().length;
 	});
 
@@ -161,7 +167,7 @@
 	};
 
 	const logout = () => {
-		store.commit('logout');
+		clearSession();
 		uni.showToast({
 			icon: 'none',
 			title: '已退出登录'
@@ -180,6 +186,9 @@
 			goLogin('/pages/mine/profile/profile');
 			return;
 		}
+		if (!ensureSession('/pages/mine/profile/profile')) {
+			return;
+		}
 		uni.navigateTo({
 			url: '/pages/mine/profile/profile'
 		});
@@ -190,14 +199,16 @@
 			goLogin('/pages/mine/settings/settings');
 			return;
 		}
+		if (!ensureSession('/pages/mine/settings/settings')) {
+			return;
+		}
 		uni.navigateTo({
 			url: '/pages/mine/settings/settings'
 		});
 	};
 
 	const handleMenu = (requireLogin: boolean, action: () => void, redirectUrl = '') => {
-		if (requireLogin && !isLoggedIn.value) {
-			goLogin(redirectUrl);
+		if (requireLogin && (!isLoggedIn.value || !ensureSession(redirectUrl))) {
 			return;
 		}
 		action();
@@ -211,13 +222,11 @@
 
 	.mine_page {
 		height: 100vh;
-		background: linear-gradient(180deg, #17130f 0%, #17130f 380rpx, #f4efe6 380rpx, #f7f4ee 100%);
+		background: linear-gradient(180deg, #17130f 0%, #17130f 320rpx, #f4efe6 380rpx, #f7f4ee 100%);
 	}
 
 	.mine_hero {
-		padding-left: 28rpx;
-		padding-right: 28rpx;
-		padding-bottom: 36rpx;
+		padding: 34rpx 28rpx;
 	}
 
 	.hero_top {
@@ -238,17 +247,6 @@
 		font-size: 44rpx;
 		font-weight: 700;
 		letter-spacing: 4rpx;
-		color: $font-color-white;
-	}
-
-	.hero_setting {
-		width: 72rpx;
-		height: 72rpx;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		border-radius: 50%;
-		background: rgba(255, 255, 255, 0.08);
 		color: $font-color-white;
 	}
 

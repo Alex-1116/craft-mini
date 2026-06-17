@@ -1,6 +1,6 @@
 <template>
 	<scroll-view class="message_container" scroll-y>
-		<view class="message_header">
+		<view class="message_header" :style="{ paddingTop: `${statusBarHeight}px` }">
 			<view class="header_caption">INBOX</view>
 			<view class="header_title">消息与动态</view>
 			<view class="search_box">
@@ -51,7 +51,10 @@
 
 <script lang="ts" setup>
 	import { computed, ref, reactive, watch } from 'vue';
+	import { onShow } from '@dcloudio/uni-app';
 	import { friendlyTimeFormat } from '@/shared/utils/dateUtil';
+
+	const statusBarHeight = ref(0);
 
 	const searchKey = ref('');
 	const onSearch = () => {
@@ -124,6 +127,10 @@
 			}
 		});
 	};
+
+	onShow(() => {
+		statusBarHeight.value = getApp().globalData?.statusBarHeight; //状态栏高度
+	})
 </script>
 
 <style lang="scss">

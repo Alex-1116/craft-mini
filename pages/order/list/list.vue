@@ -36,11 +36,18 @@
 	import { ref } from 'vue';
 	import { onShow } from '@dcloudio/uni-app';
 	import Api from '@/services/api';
+	import { ensureSession, syncSessionState } from '@/shared/auth/session';
 
 	const statusBarHeight = ref(0);
 	const orders = ref<any[]>([]);
+	const protectedPath = '/pages/order/list/list';
 
 	const syncOrders = async () => {
+		if (!syncSessionState()) {
+			orders.value = [];
+			return;
+		}
+
 		try {
 			const res = await Api.order.getOrderListApi();
 			orders.value = res?.data || [];
@@ -52,6 +59,9 @@
 
 	onShow(() => {
 		statusBarHeight.value = getApp().globalData?.statusBarHeight || 0;
+		if (!ensureSession(protectedPath, 'redirectTo')) {
+			return;
+		}
 		void syncOrders();
 	});
 

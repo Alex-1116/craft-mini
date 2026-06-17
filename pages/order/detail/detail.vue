@@ -89,9 +89,11 @@
 	import { computed, ref } from 'vue';
 	import { onLoad } from '@dcloudio/uni-app';
 	import Api from '@/services/api';
+	import { ensureSession } from '@/shared/auth/session';
 
 	const statusBarHeight = ref(0);
 	const order = ref<any>();
+	const protectedPath = '/pages/order/detail/detail';
 
 	const statusLabel = computed(() => {
 		switch (order.value?.status || 'PENDING') {
@@ -120,6 +122,10 @@
 
 	onLoad(async (options) => {
 		statusBarHeight.value = getApp().globalData?.statusBarHeight || 0;
+		const redirectTarget = options?.id ? `${protectedPath}?id=${options.id}` : protectedPath;
+		if (!ensureSession(redirectTarget, 'redirectTo')) {
+			return;
+		}
 		try {
 			const res = await Api.order.getOrderDetailApi(options?.id || '');
 			order.value = res?.data;

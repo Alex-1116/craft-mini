@@ -55,6 +55,7 @@
 	import { ref } from 'vue';
 	import { onLoad } from '@dcloudio/uni-app';
 	import Api from '@/services/api';
+	import { ensureSession } from '@/shared/auth/session';
 
 	const statusBarHeight = ref(0);
 	const editingId = ref('');
@@ -72,10 +73,7 @@
 		statusBarHeight.value = getApp().globalData?.statusBarHeight || 0;
 		const id = options?.id || '';
 		redirectTarget.value = id ? `/pages/mine/address-editor/address-editor?id=${id}` : '/pages/mine/address-editor/address-editor';
-		if (!uni.getStorageSync('token')) {
-			uni.redirectTo({
-				url: `/pages/auth/login?redirect=${encodeURIComponent(redirectTarget.value)}`
-			});
+		if (!ensureSession(redirectTarget.value, 'redirectTo')) {
 			return;
 		}
 		editingId.value = id;
@@ -108,16 +106,8 @@
 				detail: target.detail,
 				isDefault: target.isDefault
 			};
-		} catch (error: any) {
-			if (error?.status === 401) {
-				uni.removeStorageSync('token');
-				uni.removeStorageSync('userInfo');
-				uni.redirectTo({
-					url: `/pages/auth/login?redirect=${encodeURIComponent(redirectTarget.value)}`
-				});
-				return;
-			}
-
+		} catch (error) {
+			console.error('loadAddressDetail failed', error);
 			setTimeout(() => {
 				returnToAddressList();
 			}, 250);
@@ -173,14 +163,8 @@
 			setTimeout(() => {
 				goBack();
 			}, 250);
-		} catch (error: any) {
-			if (error?.status === 401) {
-				uni.removeStorageSync('token');
-				uni.removeStorageSync('userInfo');
-				uni.redirectTo({
-					url: `/pages/auth/login?redirect=${encodeURIComponent(redirectTarget.value)}`
-				});
-			}
+		} catch (error) {
+			console.error('submitAddress failed', error);
 		} finally {
 			loading.value = false;
 		}

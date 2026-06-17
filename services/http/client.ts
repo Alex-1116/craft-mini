@@ -1,5 +1,6 @@
 import envConfig from '@/shared/config/env';
 import md5 from '@/services/crypto/md5-service';
+import { getAccessToken, getCurrentPageUrl, handleUnauthorized } from '@/shared/auth/session';
 
 type RequestMethod = 'GET' | 'POST' | 'PUT' | 'DELETE';
 type RequestParams = Record<string, string | number | boolean | null | undefined>;
@@ -55,7 +56,9 @@ const buildQueryString = (params?: RequestParams) => {
 		return '';
 	}
 
-	return new URLSearchParams(normalizedParams).toString();
+	return Object.keys(normalizedParams)
+		.map((key) => `${encodeURIComponent(key)}=${encodeURIComponent(normalizedParams[key])}`)
+		.join('&');
 };
 
 const buildSignature = (payload?: any, skipSignature?: boolean) => {
@@ -98,7 +101,7 @@ class HttpClient {
 			const fullURL = `${this.baseURL}${url}${queryString ? `?${queryString}` : ''}`;
 			const requestPayload = method === 'GET' || method === 'DELETE' ? params : data;
 			const signature = buildSignature(requestPayload, skipSignature);
-			const accessToken = token ? uni.getStorageSync('token') : '';
+			const accessToken = token ? getAccessToken() : '';
 
 			const finalConfig = {
 				...this.defaultConfig,
@@ -126,6 +129,9 @@ class HttpClient {
 			});
 
 			if (response.statusCode >= 400) {
+				if (response.statusCode === 401 && token) {
+					handleUnauthorized(getCurrentPageUrl(), 'redirectTo');
+				}
 				const error: ResponseError = new Error(resolveErrorMessage(response));
 				error.status = response.statusCode;
 				error.data = response.data;

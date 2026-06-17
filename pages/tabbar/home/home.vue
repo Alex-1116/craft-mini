@@ -1,22 +1,20 @@
 <template>
 	<scroll-view class="home_container" scroll-y>
-		<view class="hero_shell">
-			<view class="hero_panel" :style="heroPanelStyle">
-				<view class="brand_row" :style="brandRowStyle">
-					<view class="brand_copy">
-						<view class="brand_subtitle">CRAFT MINI</view>
-						<view class="brand_title">雅致工艺</view>
-					</view>
-					<image class="brand_logo" src="/static/images/mini-logo.png" mode="aspectFill"></image>
+		<view class="home_header" :style="{ paddingTop: `${statusBarHeight}px` }">
+			<view class="brand_row" :style="brandRowStyle">
+				<view class="brand_copy">
+					<view class="brand_subtitle">CRAFT MINI</view>
+					<view class="brand_title">雅致工艺</view>
 				</view>
-				<view class="search_box" @click="onSearch">
-					<view class="iconfont icon-search search_icon"></view>
-					<text class="search_text">搜索雅器、茶器、香器与陈设</text>
-				</view>
-				<view class="hero_copy">
-					<text class="hero_copy-title">以器载道，重构东方审美的日常陈列</text>
-					<text class="hero_copy-desc">延续网站端的黑金米白主题，在小程序中优先呈现精选商品、分类与沉浸式卡片布局。</text>
-				</view>
+				<image class="brand_logo" src="/static/images/mini-logo.png" mode="aspectFill"></image>
+			</view>
+			<view class="search_box" @click="onSearch">
+				<view class="iconfont icon-search search_icon"></view>
+				<text class="search_text">搜索雅器、茶器、香器与陈设</text>
+			</view>
+			<view class="hero_copy">
+				<text class="hero_copy-title">以器载道，重构东方审美的日常陈列</text>
+				<text class="hero_copy-desc">延续网站端的黑金米白主题，在小程序中优先呈现精选商品、分类与沉浸式卡片布局。</text>
 			</view>
 		</view>
 
@@ -121,7 +119,7 @@
 
 <script lang="ts" setup>
 	import { computed, ref } from 'vue';
-	import { onLoad } from '@dcloudio/uni-app';
+	import { onLoad, onShow } from '@dcloudio/uni-app';
 	import Api from '@/services/api';
 	import type { ProductItem } from '@/services/api/modules/product';
 
@@ -248,7 +246,7 @@
 		}
 	};
 
-	const heroPanelStyle = computed(() => ({
+	const homeHeaderStyle = computed(() => ({
 		paddingTop: `${statusBarHeight.value + 16}px`
 	}));
 
@@ -303,16 +301,11 @@
 		background: linear-gradient(180deg, #efe7d8 0%, #f7f4ee 220rpx, #f7f4ee 100%);
 	}
 
-	.hero_shell {
-		padding: 0 0 24rpx;
-	}
-
-	.hero_panel {
+	.home_header {
 		position: relative;
 		min-height: 560rpx;
-		padding-left: 40rpx;
-		padding-right: 40rpx;
-		padding-bottom: 60rpx;
+		padding: 34rpx 28rpx;
+		padding-bottom: 120rpx;
 		background: linear-gradient(180deg, #1c1712 0%, #2a2218 100%);
 		border-bottom-left-radius: 48rpx;
 		border-bottom-right-radius: 48rpx;
@@ -405,7 +398,7 @@
 	}
 
 	.category_section {
-		margin-top: -60rpx;
+		margin-top: -80rpx;
 		position: relative;
 		z-index: 3;
 	}

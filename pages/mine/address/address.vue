@@ -61,9 +61,10 @@
 
 <script lang="ts" setup>
 	import { computed, ref } from 'vue';
-	import { useStore } from 'vuex';
 	import { onLoad, onShow } from '@dcloudio/uni-app';
 	import Api from '@/services/api';
+	import { ensureSession, openLoginPage, syncSessionState } from '@/shared/auth/session';
+	import { useUserStore } from '@/store';
 
 	interface AddressItem {
 		id: string;
@@ -74,15 +75,16 @@
 		isDefault: boolean;
 	}
 
-	const store = useStore();
+	const userStore = useUserStore();
 	const statusBarHeight = ref(0);
-	const isLoggedIn = computed(() => store.getters.isLoggedIn);
+	const isLoggedIn = computed(() => userStore.isLoggedIn);
 	const addressList = ref<AddressItem[]>([]);
 	const defaultAddress = computed(() => addressList.value.find((item) => item.isDefault) || null);
 	const loading = ref(false);
+	const protectedPath = '/pages/mine/address/address';
 
 	const syncAddresses = async () => {
-		if (!isLoggedIn.value) {
+		if (!isLoggedIn.value || !syncSessionState()) {
 			addressList.value = [];
 			return;
 		}
@@ -91,11 +93,9 @@
 		try {
 			const res = await Api.address.getAddressListApi();
 			addressList.value = res?.data || [];
-		} catch (error: any) {
-			if (error?.status === 401) {
-				store.commit('logout');
-				addressList.value = [];
-			}
+		} catch (error) {
+			addressList.value = [];
+			console.error('syncAddresses failed', error);
 		} finally {
 			loading.value = false;
 		}
@@ -103,10 +103,16 @@
 
 	onLoad(() => {
 		statusBarHeight.value = getApp().globalData?.statusBarHeight || 0;
+		if (!ensureSession(protectedPath, 'redirectTo')) {
+			return;
+		}
 		void syncAddresses();
 	});
 
 	onShow(() => {
+		if (!ensureSession(protectedPath, 'redirectTo')) {
+			return;
+		}
 		void syncAddresses();
 	});
 
@@ -118,11 +124,7 @@
 		uni.switchTab({ url: '/pages/tabbar/mine/mine' });
 	};
 
-	const goLogin = () => {
-		uni.navigateTo({
-			url: `/pages/auth/login?redirect=${encodeURIComponent('/pages/mine/address/address')}`
-		});
-	};
+	const goLogin = () => openLoginPage(protectedPath, 'redirectTo');
 
 	const formatPhone = (phone: string) => {
 		const normalizedPhone = phone.replace(/\s+/g, '');
@@ -150,10 +152,8 @@
 				icon: 'none',
 				title: '已设为默认地址'
 			});
-		} catch (error: any) {
-			if (error?.status === 401) {
-				store.commit('logout');
-			}
+		} catch (error) {
+			console.error('makeDefault failed', error);
 		}
 	};
 
@@ -173,10 +173,8 @@
 							icon: 'none',
 							title: '地址已删除'
 						});
-					} catch (error: any) {
-						if (error?.status === 401) {
-							store.commit('logout');
-						}
+					} catch (error) {
+						console.error('deleteAddress failed', error);
 					}
 				})();
 			}

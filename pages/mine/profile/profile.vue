@@ -54,15 +54,15 @@
 
 <script lang="ts" setup>
 	import { computed, ref } from 'vue';
-	import { useStore } from 'vuex';
 	import { onLoad } from '@dcloudio/uni-app';
+	import { useUserStore } from '@/store';
 
-	const store = useStore();
+	const userStore = useUserStore();
 	const statusBarHeight = ref(0);
 	const avatarUrl = 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&q=80';
 
-	const isLoggedIn = computed(() => store.getters.isLoggedIn);
-	const userInfo = computed(() => store.getters.getUserInfo || {});
+	const isLoggedIn = computed(() => userStore.isLoggedIn);
+	const userInfo = computed(() => userStore.userInfo || {});
 	const displayName = computed(() => userInfo.value.name || userInfo.value.username || '雅致来客');
 	const profileText = computed(() => userInfo.value.email || '欢迎回到雅致工艺');
 	const infoItems = computed(() => [

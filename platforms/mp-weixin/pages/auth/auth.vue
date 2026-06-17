@@ -19,8 +19,8 @@
 
 <script lang="ts" setup>
 	import { ref } from 'vue';
-	import { useStore } from 'vuex';
-	const store = useStore();
+	import { useUserStore } from '@/store';
+	const userStore = useUserStore();
 	
 	const miniauthVisible = ref(false);
 	const handleLogin = () => {
@@ -50,7 +50,7 @@
 			let params = {
 				code: code
 			}
-			const res = await store.dispatch('miniLogin', params);
+			const res = await userStore.miniLogin(params);
 			if (res.code === 200) {
 				setTimeout(() => {
 					uni.hideLoading()

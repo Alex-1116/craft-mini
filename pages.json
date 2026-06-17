@@ -13,7 +13,8 @@
 			"path": "pages/tabbar/message/message",
 			"style": {
 				"navigationBarTitleText": "消息",
-				"navigationBarBackgroundColor": "#1b1712"
+				"navigationBarBackgroundColor": "#1b1712",
+				"navigationStyle": "custom"
 			}
 		},
 		{

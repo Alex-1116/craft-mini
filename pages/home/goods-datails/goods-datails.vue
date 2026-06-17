@@ -66,6 +66,7 @@
 	import { onLoad } from '@dcloudio/uni-app';
 	import Api from '@/services/api';
 	import { saveCheckoutDraft } from '@/shared/mock/craft';
+	import { ensureSession } from '@/shared/auth/session';
 
 	interface DetailProduct {
 		id: string;
@@ -151,10 +152,7 @@
 			productId: product.value.id,
 			quantity: 1
 		});
-		if (!uni.getStorageSync('token')) {
-			uni.navigateTo({
-				url: `/pages/auth/login?redirect=${encodeURIComponent('/pages/order/checkout/checkout')}`
-			});
+		if (!ensureSession('/pages/order/checkout/checkout')) {
 			return;
 		}
 		uni.navigateTo({

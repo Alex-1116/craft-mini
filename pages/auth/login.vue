@@ -92,11 +92,11 @@
 
 <script lang="ts" setup>
 	import { computed, ref } from 'vue';
-	import { useStore } from 'vuex';
 	import { onLoad } from '@dcloudio/uni-app';
 	import Api from '@/services/api';
+	import { useUserStore } from '@/store';
 
-	const store = useStore();
+	const userStore = useUserStore();
 	const statusBarHeight = ref(0);
 	const loading = ref(false);
 	const usePhoneMode = ref(false);
@@ -160,10 +160,8 @@
 	};
 
 	const completeLogin = (token: string, userInfo: Record<string, any>) => {
-		store.commit('updateToken', token);
-		store.commit('updateUserInfo', userInfo);
-		uni.setStorageSync('token', token);
-		uni.setStorageSync('userInfo', userInfo);
+		userStore.updateToken(token);
+		userStore.updateUserInfo(userInfo);
 		uni.showToast({
 			icon: 'none',
 			title: '登录成功'

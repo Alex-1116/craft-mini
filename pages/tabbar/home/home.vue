@@ -25,7 +25,6 @@
 						<view class="category_panel-caption">Category</view>
 						<view class="category_panel-title">器物分类</view>
 					</view>
-					<view class="category_panel-tip">轻触进入对应列表</view>
 				</view>
 				<scroll-view class="category_scroll" scroll-x show-scrollbar="false">
 					<view class="category_list">
@@ -267,9 +266,6 @@
 
 	const switchCategory = (name: string) => {
 		currentCategory.value = name;
-		uni.navigateTo({
-			url: `/pages/home/goods-list/goods-list?category=${encodeURIComponent(name)}`
-		});
 	};
 
 	const onSearch = () => {
@@ -433,12 +429,6 @@
 		color: $font-color-darkGrey;
 	}
 
-	.category_panel-tip {
-		padding-bottom: 6rpx;
-		font-size: 22rpx;
-		color: $font-color-lightGrey;
-	}
-
 	.category_scroll {
 		white-space: nowrap;
 	}
@@ -460,14 +450,14 @@
 		border: 1rpx solid rgba(138, 120, 80, 0.08);
 		color: $font-color-mediumGray;
 		font-size: 24rpx;
-		box-shadow: 0 8rpx 18rpx rgba(0, 0, 0, 0.04);
+		// box-shadow: 0 8rpx 18rpx rgba(0, 0, 0, 0.04);
 		transition: all 0.2s ease;
 
 		&.active {
 			background: linear-gradient(135deg, #9b875a 0%, #75643f 100%);
 			color: $font-color-white;
 			border-color: transparent;
-			box-shadow: 0 14rpx 28rpx rgba(117, 100, 63, 0.28);
+			// box-shadow: 0 14rpx 28rpx rgba(117, 100, 63, 0.28);
 
 			.category_icon-wrap {
 				background: rgba(255, 255, 255, 0.16);

@@ -99,11 +99,5 @@ export const useUserStore = defineStore(
 		syncFromStorage,
 		miniLogin
 	};
-	},
-	{
-		persist: {
-			key: 'craft-mini:user',
-			pick: ['token', 'userInfo']
-		}
 	}
 );

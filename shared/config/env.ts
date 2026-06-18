@@ -1,10 +1,10 @@
 // envConfig.ts
 const envConfig = {
 	dev: {
-		baseUrl: process.env.UNI_PLATFORM === 'h5' ? '/test-api' : 'http://127.0.0.1:3000',
+		baseUrl: process.env.UNI_PLATFORM === 'h5' ? '/test-api' : 'https://craft.tarnmind.com',
 	},
 	prod: {
-		baseUrl: 'https://your-production-url.com',
+		baseUrl: 'https://craft.tarnmind.com',
 	},
 };
 

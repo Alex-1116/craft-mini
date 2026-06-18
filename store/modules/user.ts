@@ -6,6 +6,7 @@ import Api from '@/services/api';
 
 type UserInfo = Record<string, any>;
 
+const PERSISTED_USER_KEY = 'craft-mini:user';
 const LEGACY_TOKEN_KEY = 'token';
 const LEGACY_USER_INFO_KEY = 'userInfo';
 
@@ -35,6 +36,10 @@ const clearLegacySession = () => {
 	uni.removeStorageSync(LEGACY_USER_INFO_KEY);
 };
 
+const clearPersistedUserStore = () => {
+	uni.removeStorageSync(PERSISTED_USER_KEY);
+};
+
 export const useUserStore = defineStore(
 	'user',
 	() => {
@@ -59,6 +64,7 @@ export const useUserStore = defineStore(
 		token.value = null;
 		userInfo.value = {};
 		clearLegacySession();
+		clearPersistedUserStore();
 	};
 
 	const syncFromStorage = () => {

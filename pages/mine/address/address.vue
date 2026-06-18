@@ -1,6 +1,6 @@
 <template>
 	<scroll-view class="address_page" scroll-y>
-		<view class="page_nav" :style="{ paddingTop: `${statusBarHeight + 12}px` }">
+		<view class="page_nav" :style="{ paddingTop: `${statusBarHeight}px` }">
 			<view class="nav_back" @click="goBack">
 				<text class="iconfont icon-arrow-left"></text>
 			</view>
@@ -11,12 +11,12 @@
 			<view class="section_header">
 				<view>
 					<view class="section_caption">Address</view>
-					<view class="section_title">地址管理</view>
+					<view class="section_title">{{ isSelectMode ? '选择收货地址' : '地址管理' }}</view>
 				</view>
 				<view class="header_action" @click="goEditor()">新增地址</view>
 			</view>
 
-			<view class="address_card" v-for="item in addressList" :key="item.id">
+			<view class="address_card" v-for="item in addressList" :key="item.id" @click="isSelectMode ? selectAddress(item.id) : undefined">
 				<view class="address_top">
 					<view class="address_name">
 						<text>{{ item.name }}</text>
@@ -27,9 +27,10 @@
 				<view class="address_text">{{ item.region }}</view>
 				<view class="address_text">{{ item.detail }}</view>
 				<view class="address_actions">
-					<view class="action_button" @click="goEditor(item.id)">编辑</view>
-					<view class="action_button ghost" @click="makeDefault(item.id)" v-if="!item.isDefault">设为默认</view>
-					<view class="action_button danger" @click="deleteAddress(item.id)" v-if="addressList.length > 1">删除</view>
+					<view class="action_button primary" v-if="isSelectMode" @click.stop="selectAddress(item.id)">选择此地址</view>
+					<view class="action_button" @click.stop="goEditor(item.id)">编辑</view>
+					<view class="action_button ghost" @click.stop="makeDefault(item.id)" v-if="!item.isDefault">设为默认</view>
+					<view class="action_button danger" @click.stop="deleteAddress(item.id)">删除</view>
 				</view>
 			</view>
 
@@ -51,8 +52,8 @@
 
 		<view class="content_section" v-else>
 			<view class="empty_card">
-				<view class="empty_title">登录后查看收货信息</view>
-				<view class="empty_desc">收货地址会用于结算页默认回填，帮助你更快完成下单。</view>
+				<view class="empty_title">{{ isSelectMode ? '登录后选择收货地址' : '登录后查看收货信息' }}</view>
+				<view class="empty_desc">{{ isSelectMode ? '地址选择后会自动回填到结算页，帮助你更快完成下单。' : '收货地址会用于结算页默认回填，帮助你更快完成下单。' }}</view>
 				<button class="empty_button btn-active" @click="goLogin">前往登录</button>
 			</view>
 		</view>
@@ -63,6 +64,7 @@
 	import { computed, ref } from 'vue';
 	import { onLoad, onShow } from '@dcloudio/uni-app';
 	import Api from '@/services/api';
+	import { saveCheckoutSelectedAddress } from '@/shared/mock/craft';
 	import { ensureSession, openLoginPage, syncSessionState } from '@/shared/auth/session';
 	import { useUserStore } from '@/store';
 
@@ -82,6 +84,8 @@
 	const defaultAddress = computed(() => addressList.value.find((item) => item.isDefault) || null);
 	const loading = ref(false);
 	const protectedPath = '/pages/mine/address/address';
+	const isSelectMode = ref(false);
+	const redirectUrl = ref('');
 
 	const syncAddresses = async () => {
 		if (!isLoggedIn.value || !syncSessionState()) {
@@ -103,6 +107,11 @@
 
 	onLoad(() => {
 		statusBarHeight.value = getApp().globalData?.statusBarHeight || 0;
+		const pages = getCurrentPages();
+		const currentPage = pages[pages.length - 1];
+		const options = currentPage?.options || {};
+		isSelectMode.value = options.mode === 'select';
+		redirectUrl.value = decodeURIComponent(options.redirect || '');
 		if (!ensureSession(protectedPath, 'redirectTo')) {
 			return;
 		}
@@ -124,7 +133,7 @@
 		uni.switchTab({ url: '/pages/tabbar/mine/mine' });
 	};
 
-	const goLogin = () => openLoginPage(protectedPath, 'redirectTo');
+	const goLogin = () => openLoginPage(isSelectMode.value && redirectUrl.value ? `${protectedPath}?mode=select&redirect=${encodeURIComponent(redirectUrl.value)}` : protectedPath, 'redirectTo');
 
 	const formatPhone = (phone: string) => {
 		const normalizedPhone = phone.replace(/\s+/g, '');
@@ -135,9 +144,42 @@
 	};
 
 	const goEditor = (id = '') => {
+		const query = [];
+		if (id) {
+			query.push(`id=${id}`);
+		}
+		if (isSelectMode.value) {
+			query.push('mode=select');
+		}
+		if (redirectUrl.value) {
+			query.push(`redirect=${encodeURIComponent(redirectUrl.value)}`);
+		}
 		uni.navigateTo({
-			url: `/pages/mine/address-editor/address-editor${id ? `?id=${id}` : ''}`
+			url: `/pages/mine/address-editor/address-editor${query.length ? `?${query.join('&')}` : ''}`
 		});
+	};
+
+	const selectAddress = (id: string) => {
+		if (!isSelectMode.value) {
+			return;
+		}
+
+		saveCheckoutSelectedAddress(id);
+		uni.showToast({
+			icon: 'none',
+			title: '地址已回填'
+		});
+		setTimeout(() => {
+			if (getCurrentPages().length > 1) {
+				uni.navigateBack();
+				return;
+			}
+			if (redirectUrl.value) {
+				uni.redirectTo({ url: redirectUrl.value });
+				return;
+			}
+			uni.switchTab({ url: '/pages/tabbar/mine/mine' });
+		}, 250);
 	};
 
 	const makeDefault = async (id: string) => {
@@ -316,6 +358,11 @@
 		background: linear-gradient(135deg, #9b875a 0%, #75643f 100%);
 		font-size: 24rpx;
 		color: $font-color-white;
+
+		&.primary {
+			background: linear-gradient(135deg, #9b875a 0%, #75643f 100%);
+			color: $font-color-white;
+		}
 
 		&.ghost {
 			background: #f4efe6;

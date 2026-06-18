@@ -208,7 +208,7 @@
 	};
 
 	const handleMenu = (requireLogin: boolean, action: () => void, redirectUrl = '') => {
-		if (requireLogin && (!isLoggedIn.value || !ensureSession(redirectUrl))) {
+		if (requireLogin && !ensureSession(redirectUrl)) {
 			return;
 		}
 		action();

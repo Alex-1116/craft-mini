@@ -39,10 +39,6 @@ export const getCurrentPageUrl = () => resolveCurrentPageUrl();
 
 export const syncSessionState = () => {
 	const userStore = useUserStore(pinia);
-	if (userStore.isLoggedIn) {
-		return true;
-	}
-
 	userStore.syncFromStorage();
 	if (userStore.isLoggedIn) {
 		return true;

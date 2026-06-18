@@ -1,6 +1,6 @@
 <template>
 	<scroll-view class="checkout_page" scroll-y>
-		<view class="page_header" :style="{ paddingTop: `${statusBarHeight + 12}px` }">
+		<view class="page_header" :style="{ paddingTop: `${statusBarHeight}px` }">
 			<view class="nav_back" @click="goBack">
 				<text class="iconfont icon-arrow-left"></text>
 			</view>
@@ -28,23 +28,32 @@
 
 		<view class="content_section" v-if="product">
 			<view class="section_title">收货信息</view>
-			<view class="section_action" @click="goAddressManage">管理地址</view>
-			<view class="form_card">
-				<view class="field_item">
-					<text class="field_label">收货人</text>
-					<input v-model="formState.customerName" class="field_input" placeholder="请输入收货人姓名" placeholder-class="field_placeholder" />
+			<view class="address_card" v-if="selectedAddress" @click="goAddressManage">
+				<view class="address_top">
+					<view class="address_name">
+						<text>{{ selectedAddress.name }}</text>
+						<text class="address_phone">{{ formatPhone(selectedAddress.phone) }}</text>
+					</view>
+					<view class="address_top-right">
+						<text class="address_tag" v-if="selectedAddress.isDefault">默认</text>
+						<text class="iconfont icon-arrow-right address_arrow"></text>
+					</view>
 				</view>
-				<view class="field_item">
-					<text class="field_label">联系电话</text>
-					<input v-model="formState.phone" class="field_input" type="number" maxlength="11" placeholder="请输入联系电话" placeholder-class="field_placeholder" />
+				<view class="address_text">{{ selectedAddress.region }}</view>
+				<view class="address_text">{{ selectedAddress.detail }}</view>
+			</view>
+			<view class="address_empty-card" v-else @click="goAddressManage">
+				<view class="address_empty-top">
+					<view class="address_empty-title">暂无可用收货地址</view>
+					<text class="iconfont icon-arrow-right address_arrow"></text>
 				</view>
-				<view class="field_item">
-					<text class="field_label">收货地址</text>
-					<textarea v-model="formState.address" class="field_textarea" placeholder="请输入省市区及详细街道门牌信息" placeholder-class="field_placeholder"></textarea>
-				</view>
-				<view class="field_item">
+				<view class="address_empty-desc">请先前往地址列表新增地址，再选择回填到当前订单。</view>
+				<view class="address_empty-action">去新增并选择</view>
+			</view>
+			<view class="notes_card">
+				<view class="field_item notes_field-item">
 					<text class="field_label">订单备注</text>
-					<textarea v-model="formState.notes" class="field_textarea" placeholder="如有特殊需求，请在此补充" placeholder-class="field_placeholder"></textarea>
+					<textarea v-model="formState.notes" class="field_textarea notes_textarea" placeholder="如有特殊需求，请在此补充" placeholder-class="field_placeholder"></textarea>
 				</view>
 			</view>
 		</view>
@@ -87,38 +96,46 @@
 	import { computed, ref } from 'vue';
 	import { onLoad, onShow } from '@dcloudio/uni-app';
 	import Api from '@/services/api';
-	import { clearCheckoutDraft, getCheckoutDraft } from '@/shared/mock/craft';
+	import { clearCheckoutDraft, clearCheckoutSelectedAddress, getCheckoutDraft, getCheckoutSelectedAddress } from '@/shared/mock/craft';
 	import { ensureSession, hasAccessToken } from '@/shared/auth/session';
+
+	interface AddressItem {
+		id: string;
+		name: string;
+		phone: string;
+		region: string;
+		detail: string;
+		isDefault: boolean;
+	}
 
 	const statusBarHeight = ref(0);
 	const quantity = ref(1);
 	const loading = ref(false);
 	const product = ref<any>(null);
+	const selectedAddress = ref<AddressItem | null>(null);
 	const formState = ref({
-		customerName: '',
-		phone: '',
-		address: '',
 		notes: ''
 	});
 
 	const totalPrice = computed(() => ((product.value?.price || 0) * quantity.value).toFixed(2));
 
-	const syncDefaultAddress = async () => {
+	const syncSelectedAddress = async () => {
 		if (!hasAccessToken()) {
+			selectedAddress.value = null;
 			return;
 		}
 
 		try {
 			const res = await Api.address.getAddressListApi();
-			const defaultAddress = (res?.data || []).find((item: any) => item.isDefault);
-			if (!defaultAddress) {
-				return;
-			}
-			formState.value.customerName = defaultAddress.name;
-			formState.value.phone = defaultAddress.phone;
-			formState.value.address = `${defaultAddress.region} ${defaultAddress.detail}`;
+			const addressList = (res?.data || []) as AddressItem[];
+			const pendingSelectedId = getCheckoutSelectedAddress();
+			const pendingSelectedAddress = pendingSelectedId ? addressList.find((item) => item.id === pendingSelectedId) : null;
+			const defaultAddress = addressList.find((item) => item.isDefault) || null;
+			selectedAddress.value = pendingSelectedAddress || defaultAddress || null;
+			clearCheckoutSelectedAddress();
 		} catch (error) {
-			console.error('syncDefaultAddress failed', error);
+			selectedAddress.value = null;
+			console.error('syncSelectedAddress failed', error);
 		}
 	};
 
@@ -143,11 +160,14 @@
 			return;
 		}
 		await syncProduct();
-		await syncDefaultAddress();
+		await syncSelectedAddress();
 	});
 
 	onShow(() => {
-		void syncDefaultAddress();
+		if (!ensureSession('/pages/order/checkout/checkout')) {
+			return;
+		}
+		void syncSelectedAddress();
 	});
 
 	const goBack = () => {
@@ -174,8 +194,16 @@
 
 	const goAddressManage = () => {
 		uni.navigateTo({
-			url: '/pages/mine/address/address'
+			url: `/pages/mine/address/address?mode=select&redirect=${encodeURIComponent('/pages/order/checkout/checkout')}`
 		});
+	};
+
+	const formatPhone = (phone: string) => {
+		const normalizedPhone = phone.replace(/\s+/g, '');
+		if (normalizedPhone.length !== 11) {
+			return phone;
+		}
+		return `${normalizedPhone.slice(0, 3)} ${normalizedPhone.slice(3, 7)} ${normalizedPhone.slice(7)}`;
 	};
 
 	const submitOrder = async () => {
@@ -183,10 +211,10 @@
 			return;
 		}
 
-		if (!formState.value.customerName || !/^1\d{10}$/.test(formState.value.phone) || !formState.value.address) {
+		if (!selectedAddress.value) {
 			uni.showToast({
 				icon: 'none',
-				title: '请填写完整收货信息'
+				title: '请先选择收货地址'
 			});
 			return;
 		}
@@ -198,9 +226,9 @@
 				quantity: quantity.value,
 				unitPrice: product.value.price,
 				totalPrice: Number(totalPrice.value),
-				customerName: formState.value.customerName,
-				phone: formState.value.phone,
-				address: formState.value.address,
+				customerName: selectedAddress.value.name,
+				phone: selectedAddress.value.phone,
+				address: `${selectedAddress.value.region} ${selectedAddress.value.detail}`,
 				notes: formState.value.notes
 			});
 			const order = res?.data;
@@ -208,6 +236,7 @@
 				throw new Error('订单创建失败');
 			}
 			clearCheckoutDraft();
+			clearCheckoutSelectedAddress();
 			uni.showToast({
 				icon: 'none',
 				title: '订单已提交'
@@ -274,15 +303,10 @@
 		margin-bottom: 16rpx;
 	}
 
-	.section_action {
-		margin-top: -2rpx;
-		margin-bottom: 16rpx;
-		font-size: 24rpx;
-		color: $theme-color;
-	}
-
 	.product_card,
-	.form_card,
+	.address_card,
+	.address_empty-card,
+	.notes_card,
 	.summary_card {
 		border-radius: 28rpx;
 		background: $block-bg-white;
@@ -350,8 +374,90 @@
 		color: $font-color-darkGrey;
 	}
 
-	.form_card {
+	.address_card {
+		padding: 28rpx;
+	}
+
+	.address_top {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: 18rpx;
+	}
+
+	.address_top-right {
+		display: flex;
+		align-items: center;
+		gap: 12rpx;
+		flex-shrink: 0;
+	}
+
+	.address_name {
+		font-size: 30rpx;
+		font-weight: 700;
+		color: $font-color-darkGrey;
+	}
+
+	.address_phone {
+		margin-left: 14rpx;
+		font-size: 24rpx;
+		font-weight: 500;
+		color: $font-color-lightGrey;
+	}
+
+	.address_tag {
+		padding: 8rpx 16rpx;
+		border-radius: 999rpx;
+		background: $block-bg-accent;
+		font-size: 20rpx;
+		color: $theme-color;
+	}
+
+	.address_arrow {
+		font-size: 24rpx;
+		color: $font-color-lightGrey;
+	}
+
+	.address_text {
+		margin-top: 16rpx;
+		font-size: 24rpx;
+		line-height: 1.8;
+		color: $font-color-mediumGray;
+	}
+
+	.address_empty-card {
+		padding: 30rpx;
+	}
+
+	.address_empty-top {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 16rpx;
+	}
+
+	.address_empty-title {
+		font-size: 32rpx;
+		font-weight: 700;
+		color: $font-color-darkGrey;
+	}
+
+	.address_empty-desc {
+		margin-top: 14rpx;
+		font-size: 24rpx;
+		line-height: 1.8;
+		color: $font-color-lightGrey;
+	}
+
+	.address_empty-action {
+		margin-top: 20rpx;
+		font-size: 24rpx;
+		color: $theme-color;
+	}
+
+	.notes_card {
 		padding: 10rpx 24rpx;
+		margin-top: 18rpx;
 	}
 
 	.field_item {
@@ -361,6 +467,10 @@
 		&:last-child {
 			border-bottom: none;
 		}
+	}
+
+	.notes_field-item {
+		padding: 16rpx 0 12rpx;
 	}
 
 	.field_label {
@@ -378,7 +488,13 @@
 	}
 
 	.field_textarea {
-		min-height: 140rpx;
+		min-height: 100rpx;
+	}
+
+	.notes_textarea {
+		height: 100rpx;
+		min-height: 100rpx;
+		line-height: 36rpx;
 	}
 
 	.field_placeholder {

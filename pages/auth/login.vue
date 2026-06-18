@@ -3,7 +3,7 @@
 		<view class="auth_glow auth_glow-top"></view>
 		<view class="auth_glow auth_glow-bottom"></view>
 
-		<view class="auth_nav" :style="{ paddingTop: `${statusBarHeight + 12}px` }">
+		<view class="auth_nav" :style="{ paddingTop: `${statusBarHeight}px` }">
 			<view class="nav_back" @click="goBack">
 				<text class="iconfont icon-arrow-left"></text>
 			</view>

@@ -1,6 +1,6 @@
 <template>
 	<scroll-view class="profile_page" scroll-y>
-		<view class="page_nav" :style="{ paddingTop: `${statusBarHeight + 12}px` }">
+		<view class="page_nav" :style="{ paddingTop: `${statusBarHeight}px` }">
 			<view class="nav_back" @click="goBack">
 				<text class="iconfont icon-arrow-left"></text>
 			</view>

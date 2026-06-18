@@ -3,7 +3,7 @@
 		<view class="register_glow register_glow-top"></view>
 		<view class="register_glow register_glow-bottom"></view>
 
-		<view class="register_nav" :style="{ paddingTop: `${statusBarHeight + 12}px` }">
+		<view class="register_nav" :style="{ paddingTop: `${statusBarHeight}px` }">
 			<view class="nav_back" @click="goBack">
 				<text class="iconfont icon-arrow-left"></text>
 			</view>

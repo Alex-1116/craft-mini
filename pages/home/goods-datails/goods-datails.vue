@@ -7,7 +7,8 @@
 				</swiper-item>
 			</swiper>
 			<view class="detail_mask"></view>
-			<view class="detail_nav" :style="{ paddingTop: `${statusBarHeight + 12}px` }">
+			<view class="status__bar" :style="{'height':`${statusBarHeight}px`}"></view>
+			<view class="detail_nav" :style="{ height: `${navigateHeight}px` }">
 				<view class="nav_back" @click="goBack">
 					<text class="iconfont icon-arrow-left"></text>
 				</view>
@@ -84,6 +85,7 @@
 	}
 
 	const statusBarHeight = ref(0);
+	const navigateHeight = ref(0);
 	const product = ref<DetailProduct>({
 		id: '',
 		name: '',
@@ -140,6 +142,8 @@
 
 	onLoad((options) => {
 		statusBarHeight.value = getApp().globalData?.statusBarHeight || 0;
+		navigateHeight.value = getApp().globalData?.navigateHeight || 0;
+
 		void syncProductDetail(options?.id || '');
 	});
 
@@ -193,7 +197,11 @@
 	.detail_nav {
 		position: relative;
 		z-index: 2;
-		padding-left: 28rpx;
+		padding: 0 28rpx;
+		display: flex;
+		align-items: center;
+		justify-content: flex-start;
+		height: 100%;
 	}
 
 	.nav_back {
@@ -229,7 +237,7 @@
 
 	.detail_title {
 		margin-top: 18rpx;
-		font-size: 40rpx;
+		font-size: 32rpx;
 		line-height: 1.45;
 		font-weight: 700;
 		color: $font-color-darkGrey;

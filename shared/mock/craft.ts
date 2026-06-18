@@ -44,6 +44,7 @@ export interface CraftAddress {
 }
 
 const CHECKOUT_DRAFT_KEY = 'craft_checkout_draft';
+const CHECKOUT_SELECTED_ADDRESS_KEY = 'craft_checkout_selected_address_id';
 const ORDER_LIST_KEY = 'craft_order_list';
 const ADDRESS_LIST_KEY = 'craft_address_list';
 
@@ -239,6 +240,23 @@ export const getCheckoutDraft = (): CheckoutDraft | null => {
 
 export const clearCheckoutDraft = () => {
 	uni.removeStorageSync(CHECKOUT_DRAFT_KEY);
+};
+
+export const saveCheckoutSelectedAddress = (id: string) => {
+	if (!id) {
+		uni.removeStorageSync(CHECKOUT_SELECTED_ADDRESS_KEY);
+		return;
+	}
+
+	uni.setStorageSync(CHECKOUT_SELECTED_ADDRESS_KEY, id);
+};
+
+export const getCheckoutSelectedAddress = () => {
+	return uni.getStorageSync(CHECKOUT_SELECTED_ADDRESS_KEY) || '';
+};
+
+export const clearCheckoutSelectedAddress = () => {
+	uni.removeStorageSync(CHECKOUT_SELECTED_ADDRESS_KEY);
 };
 
 export const listOrders = (): CraftOrder[] => {

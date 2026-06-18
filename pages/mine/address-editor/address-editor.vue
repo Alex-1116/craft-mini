@@ -1,6 +1,6 @@
 <template>
 	<view class="editor_page">
-		<view class="page_nav" :style="{ paddingTop: `${statusBarHeight + 12}px` }">
+		<view class="page_nav" :style="{ paddingTop: `${statusBarHeight}px` }">
 			<view class="nav_back" @click="goBack">
 				<text class="iconfont icon-arrow-left"></text>
 			</view>
@@ -60,6 +60,8 @@
 	const statusBarHeight = ref(0);
 	const editingId = ref('');
 	const redirectTarget = ref('/pages/mine/address-editor/address-editor');
+	const isSelectMode = ref(false);
+	const redirectUrl = ref('');
 	const loading = ref(false);
 	const formState = ref({
 		name: '',
@@ -72,6 +74,8 @@
 	onLoad((options) => {
 		statusBarHeight.value = getApp().globalData?.statusBarHeight || 0;
 		const id = options?.id || '';
+		isSelectMode.value = options?.mode === 'select';
+		redirectUrl.value = decodeURIComponent(options?.redirect || '');
 		redirectTarget.value = id ? `/pages/mine/address-editor/address-editor?id=${id}` : '/pages/mine/address-editor/address-editor';
 		if (!ensureSession(redirectTarget.value, 'redirectTo')) {
 			return;
@@ -123,7 +127,14 @@
 	};
 
 	const returnToAddressList = () => {
-		uni.redirectTo({ url: '/pages/mine/address/address' });
+		const query = [];
+		if (isSelectMode.value) {
+			query.push('mode=select');
+		}
+		if (redirectUrl.value) {
+			query.push(`redirect=${encodeURIComponent(redirectUrl.value)}`);
+		}
+		uni.redirectTo({ url: `/pages/mine/address/address${query.length ? `?${query.join('&')}` : ''}` });
 	};
 
 	const submitForm = async () => {

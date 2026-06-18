@@ -6,7 +6,7 @@
 					<view class="brand_subtitle">CRAFT MINI</view>
 					<view class="brand_title">雅致工艺</view>
 				</view>
-				<image class="brand_logo" src="/static/images/mini-logo.png" mode="aspectFill"></image>
+				<!-- <image class="brand_logo" src="/static/images/mini-logo.png" mode="aspectFill"></image> -->
 			</view>
 			<view class="search_box" @click="onSearch">
 				<view class="iconfont icon-search search_icon"></view>

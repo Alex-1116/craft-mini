@@ -145,13 +145,13 @@
 			iconClass: 'dark',
 			action: () => handleSetting()
 		},
-		{
-			title: '小程序功能清单',
-			desc: '查看当前已迁移与待迁移内容',
-			icon: 'icon-gongneng',
-			iconClass: 'dark-soft',
-			action: () => uni.navigateTo({ url: '/pages/tools/function/function' })
-		}
+		// {
+		// 	title: '小程序功能清单',
+		// 	desc: '查看当前已迁移与待迁移内容',
+		// 	icon: 'icon-gongneng',
+		// 	iconClass: 'dark-soft',
+		// 	action: () => uni.navigateTo({ url: '/pages/tools/function/function' })
+		// }
 	];
 
 	onShow(() => {
